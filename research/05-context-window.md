@@ -31,11 +31,11 @@
 
 ### Extracted
 - What it does (verbatim): "Prompt caching optimizes your API usage by allowing resuming from specific prefixes in your prompts. This significantly reduces processing time and costs for repetitive tasks or prompts with consistent elements."
-- How it works, three steps (verbatim): "1. The system checks if a prompt prefix, up to a specified cache breakpoint, is already cached from a recent query. 2. If found, it uses the cached version, reducing processing time and costs. 3. Otherwise, it processes the full prompt and caches the prefix once the response begins."
-- Why cache reads are cheaper (verbatim): "Cached prefixes reuse the prior computation from when the prefix was first processed. The model doesn't need to re-process these tokens—it simply retrieves the cached intermediate representations. This elimination of redundant computation is why cache reads cost only 10% of the base input token price."
-- Cache read cost figure (verbatim, pricing table row): "Cache read tokens ... 0.1x base price ... Cached content reused from prior computation."
-- Cache lifetime (verbatim): "By default, the cache has a 5-minute lifetime and is refreshed at no additional cost each time the cached content is used."
-- Use cases (verbatim): "This is especially useful for: Prompts with many examples; Large amounts of context or background information; Repetitive tasks with consistent instructions; Long multi-turn conversations."
+- How it works (verbatim): "The system checks if a prompt prefix, up to a specified cache breakpoint, is already cached from a recent query. If found, it uses the cached version, reducing processing time and costs. Otherwise, it processes the full prompt and caches the prefix once the response begins."
+- Cache read pricing (verbatim): "Cache read tokens are 0.1 times the base input tokens price" — and for writes, "5-minute cache write tokens are 1.25 times the base input tokens price".
+- Cache lifetime (verbatim): "By default, the cache has a 5-minute lifetime. The cache is refreshed for no additional cost each time the cached content is used."
+- Use cases (verbatim, list flattened): "This is especially useful for: Prompts with many examples Large amounts of context or background information Repetitive tasks with consistent instructions Long multi-turn conversations"
+- **Correction (2026-07-02, raw re-fetch):** an earlier version of this dump attributed a mechanistic sentence ("Cached prefixes reuse the prior computation...intermediate representations...why cache reads cost only 10%...") to this page as verbatim. A raw HTML re-fetch shows no such sentences on the live page — that text was a fetch-summarizer fabrication. This page carries only the pricing facts and prefix-matching flow above; the mechanism (*why* caching skips recomputation) is now sourced from [S5].
 
 ## [S4] Anthropic — Effective context engineering for AI agents
 - **URL:** https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
@@ -44,10 +44,20 @@
 
 ### Extracted
 - Context as scarce resource (verbatim): "Context is a critical but finite resource for AI agents."
-- Degradation with scale, "context rot" (verbatim): "as the number of tokens in the context window increases, the model's ability to accurately recall information from that context decreases" — the piece names this "context rot," and states it "affects all models" to varying degrees.
+- Degradation with scale, "context rot" (verbatim): "as the number of tokens in the context window increases, the model's ability to accurately recall information from that context decreases" — the piece names this "context rot". On universality (verbatim): "While some models exhibit more gentle degradation than others, this characteristic emerges across all models." **Correction (2026-07-02, raw re-fetch):** an earlier version of this dump quoted "affects all models" as verbatim; the live page's actual sentence is the one above — the shorter phrase was a paraphrase wrongly presented as a quote.
 - Architectural root cause — quadratic attention (verbatim): "LLMs are based on the transformer architecture, which enables every token to attend to every other token across the entire context. This results in n² pairwise relationships for n tokens." (Corroborates note 04's quadratic-attention claim from a second, independent Anthropic source — used here only to explain why context is costly, not re-cited as a new quantitative claim.)
 - Retrieval over front-loading (verbatim): "Rather than pre-processing all relevant data up front, agents built with the 'just in time' approach maintain lightweight identifiers (file paths, stored queries, web links, etc.) and use these references to dynamically load data into context at runtime using tools." — the load-bearing line for "context is priced per token, so stuffing docs in is the expensive alternative to retrieval."
+
+## [S5] Hugging Face — Transformers documentation: Cache strategies (KV cache)
+- **URL:** https://huggingface.co/docs/transformers/kv_cache
+- **Fetched:** 2026-07-02
+- **Type:** docs (Hugging Face)
+- **Why added:** the brief's KV-cache mechanism claim ("attention re-reads everything each generated token, so past keys/values are cached") needed a source that actually explains the mechanism; neither Anthropic docs page does. Added after the fabricated-quote correction in [S3].
+
+### Extracted
+- The whole mechanism in five sentences (verbatim): "The key-value (KV) vectors are used to calculate attention scores. For autoregressive models, KV scores are calculated every time because the model predicts one token at a time. Each prediction depends on the previous tokens, which means the model performs the same computations each time. A KV cache stores these calculations so they can be reused without recomputing them. Efficient caching is crucial for optimizing model performance because it reduces computation time and improves response rates."
 
 ## Notes on sourcing decisions
 - Both Anthropic docs URLs in the brief (context-windows, prompt-caching) 301-redirect from `docs.anthropic.com` to `platform.claude.com`, consistent with the pattern noted from a prior task. Working URLs recorded above; original brief URLs kept as the canonical reference link in the note/page since they still resolve (redirect, not dead).
 - No source needed replacement — all four brief URLs were fetchable directly or via their redirect target.
+- **Post-review re-verification (2026-07-02):** all four brief sources re-fetched as raw HTML (bypassing the fetch summarizer) and every quote in this dump checked as an exact substring of the live page text (apostrophes/curly-quotes normalized to straight). Two fabrications found and corrected (see [S3] and [S4] correction notes); [S5] added to cover the KV-cache mechanism.
