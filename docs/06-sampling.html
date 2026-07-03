@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · Sampling — llm::intuition</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">Index</a>
+    <a href="01-what-is-an-llm.html">01</a>
+    <a href="02-tokens-and-tokenization.html">02</a>
+    <a href="03-embeddings.html">03</a>
+    <a href="04-attention-and-transformers.html">04</a>
+    <a href="05-context-window.html">05</a>
+    <a href="06-sampling.html" class="on">06</a>
+    <a href="07-how-models-are-trained.html">07</a>
+    <a href="08-scaling-laws-and-model-sizes.html">08</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module 01 / Concept 06</span>
+    <h1>Sampling: Temperature &amp; <span class="hl">Top-p</span></h1>
+    <p class="sub">The model doesn't choose the next token — it scores every token, and then a sampler rolls weighted dice. Temperature and top-p are the knobs on those dice.</p>
+    <div class="meta"><span>Read <b>10 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Note 05</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> SAMPLING KNOBS / INTERACTIVE</span><span>NEXT TOKEN AFTER "THE CAPITAL OF FRANCE IS"</span></div>
+    <div class="panel-body" id="fig">
+      <div id="smp-bars" style="display:flex;flex-direction:column;gap:5px;"></div>
+      <div style="display:grid;grid-template-columns:auto 1fr auto;gap:10px 14px;align-items:center;margin-top:18px;font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;color:var(--faint);max-width:460px;">
+        <span>TEMP</span><input type="range" id="smp-t" min="0.1" max="2" step="0.1" value="1"><span id="smp-tv">1.0</span>
+        <span>TOP-P</span><input type="range" id="smp-p" min="0.1" max="1" step="0.05" value="1"><span id="smp-pv">1.00</span>
+      </div>
+      <button class="btn" id="smp-btn" style="margin-top:16px;">Sample ▸</button>
+    </div>
+    <div class="panel-ft" id="fig-ft">DISTRIBUTION OVER 10 KEPT TOKENS — LOWER TEMP SHARPENS, LOWER TOP-P TRUNCATES</div>
+  </div>
+  <div class="figure-note">Logits are hand-made; the softmax, temperature, and top-p math is real.</div>
+
+  <div class="prose">
+    <h2>Logits are not an answer</h2>
+    <p>Run a prompt through a language model and the last thing that happens, before any text comes out, is a single matrix multiplication that produces one raw score — a logit — for every token in the model's vocabulary, all fifty-thousand-plus of them, all at once. A logit is not a probability; it's an unbounded real number, could be 6.0, could be -3.4, could be 40. Higher means the model thinks that token is a more plausible continuation, that's the only thing a logit tells you on its own. To turn that pile of raw scores into something you can actually pick from, the model runs them through softmax — exponentiate every score and divide each by the sum of all the exponentials, so the results are all positive and sum to exactly 1. What comes out the other side is a genuine probability distribution over the entire vocabulary.</p>
+    <p>// From logits to dice — that distribution is where the actual decision happens, and it's worth sitting with how different this is from what it feels like to use a chat model. It feels like the model "decides" what to say next. It doesn't. It scores every possible next token, all in one shot, and then a completely separate step — a decoding strategy — has to pick one. The model's job ends at the probability distribution; everything after that is not the model "thinking," it's an algorithm rolling dice against a distribution the model handed it. Different dice-rolling rules produce visibly different text from the exact same model and the exact same logits: "decoding strategies alone can dramatically effect the quality of machine text, even when generated from exactly the same neural language model." The model is not the whole story. The sampler is a second, independent lever.</p>
+
+    <h2>Greedy: always pick the winner, and regret it</h2>
+    <p>The simplest possible decoding strategy is greedy search: at every step, just take the single highest-probability token — it "selects the word with the highest probability as its next word... at each timestep." No randomness, no dice roll, just argmax over and over. It sounds like the obviously correct choice, but in practice it produces text that reads as flat and repetitive: "using likelihood as a decoding objective leads to text that is bland and strangely repetitive." Always taking the top pick locks generation into a rut — once a phrase starts down a well-trodden statistical path, greedy decoding has no mechanism to ever deviate from the most likely continuation, so it loops back into the same safe phrases. It's the model playing it maximally safe at every single step, and maximally safe, applied token after token, reads as robotic. It's also fully deterministic: same prompt in, same output out, every time, because there's no randomness anywhere in the process.</p>
+
+    <h2>Temperature: turning up (or down) the randomness</h2>
+    <p>// Temperature — this is the first real knob on the sampler, and it works by reshaping the probability distribution before anything gets sampled from it. Concretely, temperature divides every logit by a value T before the softmax runs, which makes the distribution "sharper (increasing the likelihood of high probability words and decreasing the likelihood of low probability words) by lowering the so-called <code>temperature</code> of the softmax." Run that logic in both directions: a low temperature (say 0.1) stretches the gaps between scores apart before softmax, so the current top-scoring token ends up capturing almost all of the probability mass — sampling looks almost exactly like greedy decoding. A high temperature (say 2.0) compresses the gaps toward zero, the distribution flattens toward uniform, and even a token that started out with a mediocre logit gets a real shot at being picked. The direct recommendation from a production API: "use <code>temperature</code> closer to <code>0.0</code> for analytical / multiple choice, and closer to <code>1.0</code> for creative and generative tasks."</p>
+
+    <h2>Top-p (nucleus sampling): truncate the tail, then sample</h2>
+    <p>// Top-p — temperature reshapes the whole distribution but never removes any token from consideration; a wildly implausible token still has some nonzero chance of being picked at a high enough temperature. Top-p, also called nucleus sampling, truncates the distribution down to a much smaller candidate set before sampling ever happens: it "chooses from the smallest possible set of words whose cumulative probability exceeds the probability p. The probability mass is then redistributed among this set of words." Concretely: sort every token by probability from highest to lowest, walk down the list adding up probabilities, and stop the instant the running total crosses p. Everything in that stopped-at set is the "nucleus" — the only tokens eligible to be sampled — and everything below the cutoff is discarded entirely. This is exactly the fix the nucleus sampling paper was built around: "sampling text from the dynamic nucleus of the probability distribution, which allows for diversity while effectively truncating the less reliable tail of the distribution." The nucleus doesn't have a fixed size — a confident model gets a small nucleus, an uncertain one gets a larger one, adapting to how confident the model actually is at each step.</p>
+    <p>Top-k is the older, cruder cousin of the same idea: instead of cutting off at a cumulative probability threshold, it keeps a fixed number of the most likely tokens and discards the rest, whatever their combined probability adds up to — "the K most likely next words are filtered and the probability mass is redistributed among only those K next words." The weakness top-p was designed to fix is exactly top-k's fixed size: a fixed k either wastes slots on near-zero-probability noise when the model is confident, or fails to cover enough real probability mass when the model is uncertain. Both providers flag it as a secondary control, most usage in practice tunes temperature and, if anything, top-p, and leaves top-k alone.</p>
+    <p>None of this matters if generation never stops. <code>max_tokens</code> is a hard ceiling on how many tokens can be produced before the API cuts generation off regardless of what the sampler would have picked next. <code>stop_sequences</code> is a custom trigger — specific strings that, the moment the model emits them, immediately end generation, useful for forcing an earlier cutoff than the model would choose on its own. Together they're the practical bookends of any generation call: the sampler decides what to write, these two decide when to stop writing it.</p>
+
+    <h2>Pro vs. amateur</h2>
+    <p>// Pro vs. amateur — amateurs assume temperature 0 means fully deterministic output. Pros know it doesn't, in production: "even with <code>temperature</code> of <code>0.0</code>, the results will not be fully deterministic." Even at the theoretical floor of randomness, floating-point arithmetic and request batching on real GPU hardware introduce tiny nondeterminism that can occasionally flip the argmax between two nearly-tied logits. If you need byte-for-byte reproducible output, temperature 0 gets you close, not guaranteed.</p>
+    <p>Amateurs crank both temperature and top-p at once to "get more variety." Pros tune one, not both blindly — both parameters push in the same direction, and stacking them compounds unpredictably. Both major providers say so in their own docs, recommending altering temperature or top-p but not both. Pick the knob that maps to what you're actually trying to control and leave the other at its default.</p>
+    <p>Amateurs treat "more creative" as strictly better. Pros know high temperature buys diversity at the direct cost of hallucination risk — cranking temperature up gives real, nonzero sampling mass to tokens the model scored as implausible in the first place, and some of that tail is the model confidently generating claims it has no real support for. The same mechanism that makes brainstorming feel less robotic is what makes factual-extraction output start hallucinating specifics.</p>
+    <p>Amateurs are baffled that the same prompt gives a different answer every time, or that hitting "regenerate" ever helps. Pros know that's the sampler working as designed — every non-greedy decode is a weighted dice roll over the model's output distribution, and unless temperature is pinned to 0 and the hardware cooperates, the same prompt genuinely can and will produce different completions on different calls. That's exactly why "regenerate" is a meaningful button: it's another independent roll of the same dice, and a bad roll on the first try doesn't mean the next one will be bad too.</p>
+    <p>Amateurs use the same sampling settings for every task. Pros match the settings to what the task rewards: extraction, classification, and code generation have one correct-ish answer and heavily punish creative deviation, so low temperature is the right default. Brainstorming and creative writing reward the opposite — a higher temperature, sometimes paired with a moderately restrictive top-p to keep the tail from getting too wild. The knob isn't a personality setting; it's a tradeoff between reliability and variety, and the right position depends entirely on which side of that tradeoff the task actually needs.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://arxiv.org/abs/1904.09751"><span class="src">Paper · Holtzman et al. 2019</span><span class="t">The Curious Case of Neural Text Degeneration</span></a>
+    <a class="ref" href="https://huggingface.co/blog/how-to-generate"><span class="src">Blog · Hugging Face</span><span class="t">How to generate text: decoding methods for language generation</span></a>
+    <a class="ref" href="https://docs.anthropic.com/en/api/messages"><span class="src">Docs · Anthropic</span><span class="t">Messages API reference (temperature, top_p, top_k)</span></a>
+    <a class="ref" href="https://platform.openai.com/docs/api-reference/chat"><span class="src">Docs · OpenAI</span><span class="t">Chat Completions API reference</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="05-context-window.html">← 05 · Context Window</a>
+    <a class="next" href="07-how-models-are-trained.html">07 · How Models Are Trained →</a>
+  </nav>
+</main>
+<script>
+const CAND = [["Paris",6.0],["Lyon",3.2],["located",2.8],["the",2.5],["a",2.2],
+              ["known",1.9],["beautiful",1.6],["home",1.4],["France",1.1],["Berlin",0.6]];
+const bars = document.getElementById("smp-bars"),
+      tS = document.getElementById("smp-t"), pS = document.getElementById("smp-p"),
+      tV = document.getElementById("smp-tv"), pV = document.getElementById("smp-pv"),
+      ft = document.getElementById("fig-ft");
+let probs = [], kept = [];
+function compute(){
+  const T = parseFloat(tS.value), P = parseFloat(pS.value);
+  const ex = CAND.map(([,l]) => Math.exp(l / T)), Z = ex.reduce((a,b)=>a+b,0);
+  probs = ex.map(e => e / Z);
+  const order = probs.map((p,i)=>[p,i]).sort((a,b)=>b[0]-a[0]);
+  kept = []; let acc = 0;
+  for (const [p,i] of order){ kept.push(i); acc += p; if (acc >= P) break; }
+  tV.textContent = T.toFixed(1); pV.textContent = P.toFixed(2);
+  draw(-1);
+}
+function draw(picked){
+  bars.innerHTML = CAND.map(([w],i) => {
+    const inP = kept.includes(i), pct = (probs[i]*100);
+    return `<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.78rem;opacity:${inP?1:.35}">
+      <span style="width:86px;color:${i===picked?'#00c7fd':'var(--faint)'}">"${w}"</span>
+      <span style="height:11px;width:${Math.max(1,pct*3)}px;background:${i===picked?'#00c7fd':inP?'#0068b5':'#263039'}"></span>
+      <span style="color:var(--faint)">${pct.toFixed(1)}%${inP?"":" · CUT"}</span></div>`;
+  }).join("");
+  ft.innerHTML = picked >= 0
+    ? `SAMPLED: "<b>${CAND[picked][0]}</b>" — RUN IT AGAIN, IT MAY DIFFER`
+    : `DISTRIBUTION OVER ${kept.length} KEPT TOKEN${kept.length>1?"S":""} — LOWER TEMP SHARPENS, LOWER TOP-P TRUNCATES`;
+}
+document.getElementById("smp-btn").addEventListener("click", () => {
+  const mass = kept.reduce((a,i)=>a+probs[i],0);
+  let r = Math.random() * mass;
+  for (const i of kept){ r -= probs[i]; if (r <= 0){ draw(i); return; } }
+  draw(kept[kept.length-1]);
+});
+tS.addEventListener("input", compute); pS.addEventListener("input", compute);
+compute();
+</script>
+</body>
+</html>
