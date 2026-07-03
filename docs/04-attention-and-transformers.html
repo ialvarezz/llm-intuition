@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Attention &amp; Transformers — llm::intuition</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">Index</a>
+    <a href="01-what-is-an-llm.html">01</a>
+    <a href="02-tokens-and-tokenization.html">02</a>
+    <a href="03-embeddings.html">03</a>
+    <a href="04-attention-and-transformers.html" class="on">04</a>
+    <a href="05-context-window.html">05</a>
+    <a href="06-sampling.html">06</a>
+    <a href="07-how-models-are-trained.html">07</a>
+    <a href="08-scaling-laws-and-model-sizes.html">08</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module 01 / Concept 04</span>
+    <h1>Attention &amp; <span class="hl">Transformers</span></h1>
+    <p class="sub">Every token looks back at every token before it and asks: how much do you matter to what I say next? That question, asked in parallel across the whole sequence, is the transformer.</p>
+    <div class="meta"><span>Read <b>10 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Note 03</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> CAUSAL ATTENTION / INTERACTIVE</span><span>ONE HEAD · TOY WEIGHTS</span></div>
+    <div class="panel-body" id="fig">
+      <p style="font-family:var(--mono);font-size:.85rem;color:var(--faint);margin:0 0 14px;">The robot picked up the ball because it was light</p>
+      <div id="att-toks" style="display:flex;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:.9rem;"></div>
+      <div id="att-bars" style="margin-top:18px;display:flex;flex-direction:column;gap:5px;"></div>
+      <button class="btn" id="att-btn" style="margin-top:16px;">Next token ▸</button>
+    </div>
+    <div class="panel-ft" id="fig-ft">TOKEN "IT" ATTENDS BACKWARD — CAUSAL MASK HIDES THE FUTURE</div>
+  </div>
+  <div class="figure-note">Weights are hand-made to show the idea. Note what happens when &ldquo;it&rdquo; is selected.</div>
+
+  <div class="prose">
+    <h2>The context problem</h2>
+    <p>"Bank" means something different in "she sat on the river bank" and "she deposited a check at the bank." A tokenizer (note 02) turns both into the same token ID, and the embedding table (note 03) starts both off at the exact same vector — the model has no way, at that point, to know which "bank" it's looking at. Something has to happen after tokenization and embedding that lets a word's meaning shift based on the words around it. That something is attention, and it's the mechanism the whole modern LLM architecture is built around: "the aim of a transformer is to progressively adjust these embeddings so that they don't merely encode data of an individual word, but rather a much richer contextual meaning." The intuitive version: every token asks a question — <em>which earlier tokens matter to me right now, and how much?</em> — then blends in information from whichever tokens answer strongly. For "it" in "the animal didn't cross the street because it was too tired," "it" needs to figure out that "animal" is what it refers to before the model can predict correctly — "when the model is processing the word 'it', self-attention allows it to associate 'it' with 'animal'."</p>
+
+    <h2>Queries, keys, values</h2>
+    <p>The mechanics run through three vectors computed per token — query, key, and value — none of which are natural properties of a word. They're "created by multiplying the embedding by three matrices that we trained during the training process," and are best understood as "abstractions that are useful for calculating and thinking about attention," not things with independent meaning. <b>Query</b> is what a token is looking for: "we can imagine each noun in the sentence asking the question: 'Hey, are there any adjectives sitting in front of me?'" <b>Key</b> is what a token advertises as a potential answer to other tokens' queries: "we want to think of these keys as potential answers to the queries," and a query/key pair that align closely produce a strong match — "a larger dot product corresponds to stronger alignment." <b>Value</b> is what actually gets handed over once a token is picked as relevant — "the value vector is something that would be added to the embedding of the second word...to move it to a different part of the dimensional embedding space." Put together: every token's query gets compared against every earlier token's key, those match scores become weights, and each token's new representation becomes a weighted blend of every earlier token's value. This transfer isn't limited to neighbors — "this transfer of information from the embedding of one token to that of another can occur over potentially large distances."</p>
+
+    <h2>Heads and layers</h2>
+    <p>One query/key/value comparison captures one kind of relationship at a time. Language needs many tracked at once — grammatical agreement, coreference, topical relevance — so transformers run several independent comparisons in parallel within one layer, called <b>multi-head attention</b>: "multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions. With a single attention head, averaging inhibits this." In practice one head might specialize in something like syntactic agreement while another tracks pronoun reference, without anyone designing that split by hand — it falls out of training, and "each attention layer consists of multiple heads, which operate in parallel," heads are "independent operations, each outputting a result which is added into the residual stream." A <b>transformer</b> stacks many attention layers, each paired with a small feed-forward network applied to every position — "the outputs of the self-attention layer are fed to a feed-forward neural network" — and modern models stack dozens of these; a network like GPT-3 has "96 layers and alternates attention blocks with MLP blocks." One more detail matters for generating text one token at a time: <b>causal masking</b>. "The masking process is done to prevent later tokens from influencing earlier ones" — a token only ever attends backward, never forward.</p>
+
+    <h2>Why transformers won</h2>
+    <p>Before transformers, the standard approach was recurrent neural networks, processing a sequence one step at a time, each step depending on the last. That's a structural bottleneck: RNNs "generate a sequence of hidden states h_t, as a function of the previous hidden state h_{t-1} and the input for position t. This inherently sequential nature precludes parallelization within training examples." You can't compute step 500 until you've computed step 499 — no way to split one sequence across GPU cores. Attention breaks that dependency: every token's query/key comparison against every other token can be computed simultaneously, as one large matrix multiplication — exactly what GPUs are built to do fast in parallel. The result: models "superior in quality while being more parallelizable and requiring significantly less time to train."</p>
+
+    <h2>Pro vs. amateur</h2>
+    <p>Amateurs assume longer context is just a bigger buffer; pros know attention cost scales quadratically with sequence length — self-attention is "O(n² · d)" per layer, where n is sequence length, because "a self-attention layer connects all positions with a constant number of sequentially executed operations, whereas a recurrent layer requires O(n) sequential operations." Doubling a prompt's tokens roughly quadruples the attention compute — that's the direct reason context windows are a hard limit, not a product decision (note 05). Amateurs treat "the model attends to X" as one clean number; pros know it's per-head, per-layer — a 32-layer model with multiple heads per layer produces a separate attention pattern for every head in every layer, all running in parallel, and there's no single answer to "what does the model attend to." Amateurs read attention weights as an explanation of model behavior; pros treat them as one ingredient in a larger computation — a clean account of what a head is doing only holds "if one freezes the attention patterns" and separately accounts for what the values do; a high attention weight says information moved, not why that mattered to the final output. Amateurs assume a transformer inherently knows word order; pros know attention itself is order-blind — "since our model contains no recurrence and no convolution, in order for the model to make use of the order of the sequence, we must inject some information about the relative or absolute position of the tokens in the sequence." Word order is injected before attention runs; attention on its own would happily ignore it.</p>
+  </div>
+
+  <div class="video"><iframe src="https://www.youtube.com/embed/eMlx5fFNoYc" title="Attention in transformers, visually explained" allowfullscreen loading="lazy"></iframe></div>
+
+  <div class="refs">
+    <a class="ref" href="https://arxiv.org/abs/1706.03762"><span class="src">Paper · Vaswani et al. 2017</span><span class="t">Attention Is All You Need</span></a>
+    <a class="ref" href="https://jalammar.github.io/illustrated-transformer/"><span class="src">Blog · Jay Alammar</span><span class="t">The Illustrated Transformer</span></a>
+    <a class="ref" href="https://www.youtube.com/watch?v=eMlx5fFNoYc"><span class="src">Video · 3Blue1Brown</span><span class="t">Attention in transformers, visually explained</span></a>
+    <a class="ref" href="https://transformer-circuits.pub/2021/framework/index.html"><span class="src">Research · Anthropic</span><span class="t">A Mathematical Framework for Transformer Circuits</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="03-embeddings.html">← 03 · Embeddings</a>
+    <a class="next" href="05-context-window.html">05 · Context Window →</a>
+  </nav>
+</main>
+<script>
+const TOKS = ["The","robot","picked","up","the","ball","because","it","was","light"];
+const ATT = { // attention of token i over tokens 0..i-1 (percent, illustrative)
+  1:[100],2:[10,90],3:[5,25,70],4:[40,10,25,25],5:[15,10,30,15,30],
+  6:[5,10,25,5,10,45],7:[3,12,5,2,3,62,13],8:[4,10,6,2,4,20,10,44],
+  9:[2,6,4,2,2,38,8,30,8],
+};
+let cur = 1;
+const tEl = document.getElementById("att-toks"), bEl = document.getElementById("att-bars"),
+      btn = document.getElementById("att-btn"), ft = document.getElementById("fig-ft");
+function draw(){
+  tEl.innerHTML = TOKS.map((t,i) =>
+    `<span style="padding:4px 8px;border:1px solid ${i===cur?'#00c7fd':'#263039'};
+      color:${i===cur?'#00c7fd':i<cur?'#dcdee0':'#4a4f55'}">${t}</span>`).join("");
+  bEl.innerHTML = ATT[cur].map((p,i) =>
+    `<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.78rem;">
+       <span style="width:80px;color:var(--faint)">${TOKS[i]}</span>
+       <span style="height:11px;width:${p*2.6}px;background:${p===Math.max(...ATT[cur])?'#00c7fd':'#0068b5'}"></span>
+       <span style="color:var(--faint)">${p}%</span></div>`).join("");
+  ft.innerHTML = `TOKEN "<b>${TOKS[cur].toUpperCase()}</b>" ATTENDS BACKWARD — CAUSAL MASK HIDES THE FUTURE`;
+}
+btn.addEventListener("click", () => { cur = cur === 9 ? 1 : cur + 1; draw(); });
+draw();
+</script>
+</body>
+</html>
