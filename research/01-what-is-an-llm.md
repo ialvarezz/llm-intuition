@@ -4,13 +4,16 @@
 - **URL:** https://www.youtube.com/watch?v=zjkBMFhNj_g
 - **Fetched:** 2026-07-02
 - **Type:** video
-- **Note:** Direct WebFetch of the YouTube watch page returned only footer/nav boilerplate (no transcript). Cross-checked via WebSearch against multiple independent write-ups of this talk (Andrej Karpathy, "Intro to Large Language Models") to confirm title, speaker, and content claims.
+- **Note:** Direct WebFetch of the YouTube watch page returned only footer/nav boilerplate (no transcript). Claims below were confirmed by fetching these independent written summaries of the talk:
+  - [S1a] https://www.btwnun.me/posts/intro-to-llms/ (fetched 2026-07-02; author explicitly credits Karpathy's videos as the source)
+  - [S1b] https://www.linkedin.com/pulse/intro-large-language-models-andrej-karpathy-chris-keane-jjlbc (fetched 2026-07-02)
+  - [S1c] https://www.linkedin.com/pulse/andrej-karpathy-intro-large-language-models-summary-ilangovan-phhje (fetched 2026-07-02)
 
 ### Extracted
-- An LLM is described as "completely defined by two files: a parameters file (the weights) and a run file (the code that implements the architecture)" — i.e., the model itself is just a big block of learned numbers plus a small amount of code to run them.
-- LLMs are neural networks trained to predict the next word/token in a sequence.
-- Two-stage lifecycle: **pretraining** produces a "base model" — a very expensive, infrequent (run "once or twice a year") compression of huge amounts of internet text into network weights, trained purely to predict the next token. A base model is functionally a "document generator": given "It's raining so I should bring an", it continues with tokens like "umbrella" rather than answering a question.
-- **Fine-tuning** turns the base model into an "assistant model": human labelers write ideal responses to prompts, and the model is further trained (adjusted) to imitate that conversational behavior, enabling multi-turn dialogue and instruction-following instead of raw text continuation.
+- The model is just two files [S1a]: "An LLM can be distilled into two files: 1. The model parameters 2. Code to run the forward inference of the NN (~500 lines of c code)" — i.e., a big block of learned numbers plus a small amount of code to run them.
+- Next-token prediction [S1a]: "Given a sequence of words the neural network produces a prediction of which word comes next." Also [S1b]: "the neural network as trying to predict the next word in a sequence of prior words."
+- Pretraining as expensive, infrequent compression of internet text into weights [S1a]: "take a large chunk of the internet (~10TB of text), take a group of GPUs (~6000) and run for ~12 days to obtain parameters that can be thought of as a zip file." [S1c]: "Pre-training involves compressing text into a neural network using expensive computers, which is a computationally expensive process that only happens once or twice a year."
+- **Fine-tuning** turns the base model into an assistant: [S1a] "we swap out the dataset we are training with to a set of human prompts and ideal assistant answers." [S1b]: "This human Q&A process might involve 100K+ manual responses" (human labelers writing ideal responses). Fine-tuning is cheaper and repeatable compared to pretraining [S1c].
 
 ## [S2] But what is a GPT? Visual intro to Transformers (Deep Learning Chapter 5)
 - **URL:** https://www.youtube.com/watch?v=wjZofJX0v4M
@@ -36,7 +39,7 @@
 - **Pretraining:** "Pretraining is the initial process of training language models on a large unlabeled corpus of text. ... autoregressive language models ... are pretrained to predict the next word, given the previous context of text in the document. These pretrained models are not inherently good at answering questions or following instructions, and often require deep skill in prompt engineering to elicit desired behaviors."
 - **Fine-tuning:** "Fine-tuning is the process of further training a pretrained language model using additional data. ... Claude is not a bare language model; it has already been fine-tuned to be a helpful assistant."
 - **Context window:** "the amount of text a language model can look back on and reference when generating new text... represents a 'working memory' for the model" — distinct from the training corpus.
-- **Temperature:** "controls the randomness of a model's predictions during text generation... Users may encounter non-determinism in APIs. Even with temperature set to 0, the results will not be fully deterministic."
+- **Temperature:** "controls the randomness of a model's predictions during text generation... Users may encounter non-determinism in APIs. Even with temperature set to 0, the results will not be fully deterministic and identical inputs may produce different outputs across API calls."
 - **Tokens:** "the smallest individual units of a language model" — words, subwords, characters, or bytes; for Claude "a token approximately represents 3.5 English characters."
 - **HHH / honesty:** "An honest AI will give accurate information, and not hallucinate or confabulate. It will acknowledge its limitations and uncertainties when appropriate" (implies hallucination is a named, known failure mode, not an edge-case bug).
 
