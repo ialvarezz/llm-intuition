@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · Context Window — llm::intuition</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">Index</a>
+    <a href="01-what-is-an-llm.html">01</a>
+    <a href="02-tokens-and-tokenization.html">02</a>
+    <a href="03-embeddings.html">03</a>
+    <a href="04-attention-and-transformers.html">04</a>
+    <a href="05-context-window.html" class="on">05</a>
+    <a href="06-sampling.html">06</a>
+    <a href="07-how-models-are-trained.html">07</a>
+    <a href="08-scaling-laws-and-model-sizes.html">08</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module 01 / Concept 05</span>
+    <h1>The Context <span class="hl">Window</span></h1>
+    <p class="sub">A model has no memory — only a window. Everything it knows about your conversation must fit inside, every single turn, and the window is always closer to full than you think.</p>
+    <div class="meta"><span>Read <b>9 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Note 04</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> CONTEXT BUDGET / INTERACTIVE</span><span>TOY BUDGET · 8K TOKENS</span></div>
+    <div class="panel-body" id="fig">
+      <div id="ctx-bar" style="display:flex;height:34px;border:1px solid var(--line);overflow:hidden;"></div>
+      <div id="ctx-legend" style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;color:var(--faint);"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+        <button class="btn" id="ctx-turn">+ Add a turn</button>
+        <button class="btn" id="ctx-doc">+ Paste a doc</button>
+        <button class="btn" id="ctx-reset">Reset</button>
+      </div>
+    </div>
+    <div class="panel-ft" id="fig-ft">USED: <b>2400 / 8000 TOKENS</b> — OUTPUT SPACE IS PART OF THE BUDGET</div>
+  </div>
+  <div class="figure-note">Toy 8k window. Real windows are larger but fill the same way — and evict the same way.</div>
+
+  <div class="prose">
+    <h2>The window is the world</h2>
+    <p>Everything a model can see about your conversation — the system prompt, every prior message, any documents you've pasted in, and the reply it's currently writing — has to fit inside one fixed budget of tokens. Anthropic's own framing is blunt about what that budget actually is: "the 'context window' refers to all the text a language model can reference when generating a response, including the response itself. This is different from the large corpus of data the language model was trained on, and instead represents a 'working memory' for the model." That last phrase is the important one. The window isn't a cache of things the model has learned — it's the entire set of information available to it for this one response. Nothing outside it exists as far as the model is concerned. It's also a hard cap, not a soft guideline: feed a model more input tokens than its window holds and the request fails outright — the API "returns a 400 <code>invalid_request_error</code> ('prompt is too long') on every model" once the input alone exceeds the limit. There's no graceful degradation at the input stage; the window is a wall, not a slope.</p>
+
+    <h2>Memory is re-sending</h2>
+    <p>Chat apps feel like they remember you. They don't — the model has no memory between calls at all. What actually happens is that the app quietly re-sends the entire conversation so far, every single turn, and the model reads it fresh each time as if for the first time. This is why token counts keep climbing turn after turn: "as the conversation advances through turns, each user message and assistant response accumulates within the context window, and previous turns are preserved completely." Turn 20 of a conversation costs more to process than turn 1, because turn 20's request silently includes turns 1 through 19 as well. The illusion of a model that recalls your name from three messages ago is really an app faithfully replaying the whole transcript back to a model that has no memory of ever seeing it. And at the limit, chat interfaces quietly work around a full window rather than erroring out — "chat interfaces such as claude.ai can also manage the context window on a rolling 'first in, first out' basis." The oldest turns fall off the back to make room for new ones, with nothing in the UI announcing it — you just notice the model no longer reacts to something from earlier.</p>
+
+    <h2>The KV cache</h2>
+    <p>When a model generates a token, attention doesn't just look at the newest word — it recomputes relationships against every earlier token in the context, every single time. Doing that from scratch for the full prompt on every new token would be wasteful, since most of that earlier context hasn't changed. So implementations cache the intermediate representations (the keys and values from note 04's attention mechanism) for tokens already processed, and reuse them instead of recomputing — this is why a long prompt costs more the first time you send it than the second. Prompt caching checks whether a matching prefix was already processed on a recent request; if not, "it processes the full prompt and caches the prefix once the response begins." The saving comes from a concrete place: "cached prefixes reuse the prior computation from when the prefix was first processed. The model doesn't need to re-process these tokens—it simply retrieves the cached intermediate representations. This elimination of redundant computation is why cache reads cost only 10% of the base input token price." Caches aren't permanent either — by default a cache entry has "a 5-minute lifetime" before it expires.</p>
+
+    <h2>Lost in the middle</h2>
+    <p>A bigger window is not the same thing as reliable recall across that window. A widely-cited study found accuracy depends heavily on where in the context a fact sits: "performance is often highest when relevant information occurs at the beginning or end of the input context, and significantly degrades when models must access relevant information in the middle of long contexts, even for explicitly long-context models." The paper's own framing: "we find that performance can degrade significantly when changing the position of relevant information, indicating that current language models do not robustly make use of information in long input contexts." A model given a 50-page document and asked about a fact on page 25 is measurably more likely to miss it than the same fact on page 1 or page 50 — and this held even for models built specifically for long context. Anthropic's own engineering guidance names a related, broader version of this: "as the number of tokens in the context window increases, the model's ability to accurately recall information from that context decreases," a phenomenon they call "context rot," which "affects all models" to varying degrees. A 128k-context spec tells you the ceiling, not the quality of attention across it.</p>
+
+    <h2>Pro vs. amateur</h2>
+    <p>Amateurs think of the context window as room for the prompt alone. Pros know the output has to fit inside the same budget — the window "holds the conversation history plus the new output Claude generates." Max out the input with a giant pasted document and there may be little or no room left for the model to actually answer; a maxed-out prompt is quietly starving its own reply of space. Amateurs put critical instructions once, at the top, and assume that's enough; pros know instruction strength isn't uniform across a long context — the lost-in-the-middle effect isn't only about retrieving facts from documents, it applies to instructions buried early in a long conversation too, so restating a real constraint near the end of a long context is a hedge against it getting diluted. Amateurs treat pasting the whole document in as the free option; pros know context is priced and quality-limited, so retrieval is often cheaper and better — Anthropic's own agent guidance recommends the opposite of front-loading: rather than pre-processing all relevant data up front, "maintain lightweight identifiers (file paths, stored queries, web links, etc.) and use these references to dynamically load data into context at runtime using tools." That's the retrieval (RAG) pattern in miniature, covered properly in Module 2 — but it exists because context is a finite, metered, imperfect resource, not a bottomless notebook. Amateurs read a 128k-context spec as 128k tokens of equally good attention; pros know the number on the box is a ceiling, not a quality guarantee — context rot and lost-in-the-middle are properties of every model tested so far, long-context ones included.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://docs.anthropic.com/en/docs/build-with-claude/context-windows"><span class="src">Docs · Anthropic</span><span class="t">Context windows</span></a>
+    <a class="ref" href="https://arxiv.org/abs/2307.03172"><span class="src">Paper · Liu et al. 2023</span><span class="t">Lost in the Middle: How Language Models Use Long Contexts</span></a>
+    <a class="ref" href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching"><span class="src">Docs · Anthropic</span><span class="t">Prompt caching</span></a>
+    <a class="ref" href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"><span class="src">Engineering · Anthropic</span><span class="t">Effective context engineering for AI agents</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="04-attention-and-transformers.html">← 04 · Attention &amp; Transformers</a>
+    <a class="next" href="06-sampling.html">06 · Sampling →</a>
+  </nav>
+</main>
+<script>
+const CAP = 8000, OUT = 1000;
+let seg;
+const COLORS = {system:"#b06ad6",docs:"#4f9ee0",history:"#57b06a",output:"#e08a3c",free:"#1a2027"};
+const LABELS = {system:"SYSTEM",docs:"DOCUMENTS",history:"HISTORY",output:"RESERVED OUTPUT",free:"FREE"};
+const bar = document.getElementById("ctx-bar"), leg = document.getElementById("ctx-legend"),
+      ft = document.getElementById("fig-ft");
+function reset(){ seg = {system:400, docs:0, history:0, output:OUT}; draw(""); }
+function used(){ return seg.system + seg.docs + seg.history + seg.output; }
+function add(kind, n){
+  seg[kind] += n;
+  let msg = "";
+  while (used() > CAP && seg.history > 0){
+    seg.history = Math.max(0, seg.history - 600);
+    msg = "EVICTED: OLDEST TURNS FELL OUT OF THE WINDOW";
+  }
+  if (used() > CAP){ seg[kind] -= used() - CAP; msg = "WINDOW FULL — REQUEST WOULD BE REJECTED"; }
+  draw(msg);
+}
+function draw(msg){
+  const parts = {...seg, free: Math.max(0, CAP - used())};
+  bar.innerHTML = Object.entries(parts).filter(([,v]) => v > 0).map(([k,v]) =>
+    `<div title="${LABELS[k]}: ${v} tokens" style="width:${v/CAP*100}%;background:${COLORS[k]}"></div>`).join("");
+  leg.innerHTML = Object.entries(parts).map(([k,v]) =>
+    `<span><span style="display:inline-block;width:9px;height:9px;background:${COLORS[k]};margin-right:6px"></span>${LABELS[k]} ${v}</span>`).join("");
+  ft.innerHTML = msg ? `<b>${msg}</b>` : `USED: <b>${used()} / ${CAP} TOKENS</b> — OUTPUT SPACE IS PART OF THE BUDGET`;
+}
+document.getElementById("ctx-turn").addEventListener("click", () => add("history", 600));
+document.getElementById("ctx-doc").addEventListener("click", () => add("docs", 1500));
+document.getElementById("ctx-reset").addEventListener("click", reset);
+reset();
+</script>
+</body>
+</html>
