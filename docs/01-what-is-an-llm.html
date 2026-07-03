@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · What is an LLM — llm::intuition</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">Index</a>
+    <a href="01-what-is-an-llm.html" class="on">01</a>
+    <a href="02-tokens-and-tokenization.html">02</a>
+    <a href="03-embeddings.html">03</a>
+    <a href="04-attention-and-transformers.html">04</a>
+    <a href="05-context-window.html">05</a>
+    <a href="06-sampling.html">06</a>
+    <a href="07-how-models-are-trained.html">07</a>
+    <a href="08-scaling-laws-and-model-sizes.html">08</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module 01 / Concept 01</span>
+    <h1>What is an <span class="hl">LLM</span></h1>
+    <p class="sub">A large language model does exactly one thing: given a sequence of tokens, it predicts what comes next. Everything you've seen an LLM do is that single operation, repeated.</p>
+    <div class="meta"><span>Read <b>8 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>None</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> NEXT-TOKEN PREDICTION</span><span>INTERACTIVE</span></div>
+    <div class="panel-body" id="fig">
+      <div id="gen-text" style="font-family:var(--mono);font-size:1.05rem;line-height:2;min-height:3.5em;">The best way to learn about neural networks is</div>
+      <div id="gen-dist" style="display:flex;flex-direction:column;gap:6px;margin:18px 0;"></div>
+      <button class="btn" id="gen-btn">Sample next token ▸</button>
+    </div>
+    <div class="panel-ft" id="fig-ft">STEP 1/5 — MODEL OUTPUTS A DISTRIBUTION; ONE TOKEN IS SAMPLED</div>
+  </div>
+  <div class="figure-note">Probabilities are illustrative, not from a real model.</div>
+
+  <div class="prose">
+    <h2>The only operation</h2>
+    <p>An LLM is a next-token prediction machine. Given a sequence of tokens, it outputs a probability distribution over what token comes next — that's the whole operation. Chat, code generation, reasoning, summarization: everything you've watched an LLM do is that single step, called over and over, with the growing output fed back in as new input. A model pretrained on enough text implicitly picks up grammar, facts, and reasoning patterns because predicting the next token correctly requires something that behaves like understanding them — none of it is programmed in directly. A raw <b>base model</b> pretrained this way is still just a document continuer; it takes a further stage, fine-tuning on human-written example responses, to turn it into something that behaves like an assistant rather than an autocomplete (see note 07).</p>
+
+    <h2>The generation loop</h2>
+    <p>Prompt → tokenize → forward pass → distribution → sample one token → append → repeat, until a stop token or a length limit is hit. That's the identical loop behind every kind of output. The model itself is stateless between calls — it has no internal memory of the previous step. Each forward pass reprocesses the entire sequence so far from scratch; the growing sequence of tokens <i>is</i> the state, and nothing else. That's also why context windows are a hard limit rather than a setting (see note 05).</p>
+
+    <h2>What it is not</h2>
+    <p>Not a knowledge base with lookups — there's no query engine matching your question to a stored record; every output is a generated continuation shaped by statistical patterns, not retrieved from an index. Not deterministic by default — sampling is inherent to the loop, and even at the most conservative settings identical inputs can produce different outputs. It doesn't "read" text the way you do; it consumes tokens, not words or characters (see note 02). And it has no persistent memory between conversations — a new session starts with an empty sequence.</p>
+
+    <h2>Pro vs. amateur</h2>
+    <p>Pros think in tokens and distributions, not words and answers — they expect re-running the same prompt to change the output, because "the answer" was always one sample from a chain of distributions. Pros know hallucination is the mechanism working as designed: the model was trained to produce a fluent, statistically likely continuation, not a correct one — fluent and true are two different properties that happen to coincide often, not the same thing. Pros know the model can't reliably count its own output, because it only ever sees tokens, not the underlying characters or words. And pros know "the model learned X" really means "X was statistically present in the training data" — nothing more, nothing verified.</p>
+  </div>
+
+  <div class="video"><iframe src="https://www.youtube.com/embed/zjkBMFhNj_g" title="Intro to Large Language Models" allowfullscreen loading="lazy"></iframe></div>
+
+  <div class="refs">
+    <a class="ref" href="https://www.youtube.com/watch?v=zjkBMFhNj_g"><span class="src">Video · Andrej Karpathy</span><span class="t">Intro to Large Language Models</span></a>
+    <a class="ref" href="https://www.youtube.com/watch?v=wjZofJX0v4M"><span class="src">Video · 3Blue1Brown</span><span class="t">But what is a GPT? Visual intro to Transformers</span></a>
+    <a class="ref" href="https://docs.anthropic.com/en/docs/resources/glossary"><span class="src">Docs · Anthropic</span><span class="t">Glossary</span></a>
+    <a class="ref" href="https://arxiv.org/abs/2005.14165"><span class="src">Paper · Brown et al. 2020</span><span class="t">Language Models are Few-Shot Learners (GPT-3)</span></a>
+  </div>
+
+  <nav class="pager">
+    <span class="gap"></span>
+    <a class="next" href="02-tokens-and-tokenization.html">02 · Tokens and tokenization →</a>
+  </nav>
+</main>
+<script>
+const steps = [
+  {picks:[[" to",42],[" through",21],[" by",14],[" with",9],[" from",5]], take:" to"},
+  {picks:[[" build",38],[" read",22],[" start",15],[" write",11],[" study",7]], take:" build"},
+  {picks:[[" one",44],[" them",19],[" a",15],[" your",10],[" small",6]], take:" one"},
+  {picks:[[" yourself",51],[" from",23],[" step",11],[" at",7],[" of",4]], take:" yourself"},
+  {picks:[[".",63],[" first",14],[",",10],[" today",6],[" slowly",3]], take:"."},
+];
+let i = 0;
+const txt = document.getElementById("gen-text"),
+      dist = document.getElementById("gen-dist"),
+      btn = document.getElementById("gen-btn"),
+      ft  = document.getElementById("fig-ft");
+function showDist(){
+  dist.innerHTML = steps[i].picks.map(([tok,p]) =>
+    `<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.8rem;">
+       <span style="width:90px;color:${tok===steps[i].take?'var(--blue)':'var(--faint)'}">"${tok}"</span>
+       <span style="height:12px;width:${p*3}px;background:${tok===steps[i].take?'var(--blue)':'#263039'}"></span>
+       <span style="color:var(--faint)">${p}%</span></div>`).join("");
+  ft.textContent = `STEP ${i+1}/${steps.length} — MODEL OUTPUTS A DISTRIBUTION; ONE TOKEN IS SAMPLED`;
+}
+btn.addEventListener("click", () => {
+  txt.innerHTML += `<span style="color:var(--blue)">${steps[i].take}</span>`;
+  i++;
+  if (i >= steps.length){ btn.disabled = true; btn.textContent = "Sequence complete"; ft.textContent = "DONE — EVERY TOKEN WAS GENERATED THE SAME WAY"; dist.innerHTML=""; }
+  else showDist();
+});
+showDist();
+</script>
+</body>
+</html>
