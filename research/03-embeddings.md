@@ -19,8 +19,8 @@
 
 ### Extracted
 - Definition: an embedding is "a vector (list) of floating point numbers" that measures text relatedness.
-- Distance/similarity: "small distances suggest high relatedness and large distances suggest low relatedness." Cosine similarity is the recommended comparison metric — "computationally efficient for normalized embeddings and produces identical rankings to Euclidean distance."
-- Uses: search with relevance ranking, clustering, recommendations, anomaly detection, measuring dataset diversity, classification by semantic similarity.
+- Distance/similarity: "small distances suggest high relatedness and large distances suggest low relatedness." On metric choice (verbatim, re-fetched 2026-07-02 to correct an earlier paraphrase recorded as a quote): "We recommend cosine similarity." The page explains OpenAI embeddings are normalized to length 1, which means: "Cosine similarity can be computed slightly faster using just a dot product" and "Cosine similarity and Euclidean distance will result in the identical rankings."
+- Uses (verbatim list item): "Search (where results are ranked by relevance to a query string)"; plus clustering, recommendations, anomaly detection, diversity measurement, classification by similarity.
 - Dimensionality: `text-embedding-3-small` defaults to 1536 dimensions; `text-embedding-3-large` defaults to 3072. Both support a `dimensions` API parameter to shrink the vector "without sacrificing concept representation" (i.e., a cost/nuance trade-off is a documented, adjustable knob, not just a fixed model property).
 - Pricing: billed per input token; `text-embedding-3-small` is far cheaper per page than `-large` (roughly 62,500 pages/$ vs 9,615 pages/$) — supports "embedding models are much cheaper than chat models" framing at a relative level (small vs. large embedding model), though this fetch did not surface a direct chat-vs-embedding price comparison line.
 - Embeddings are described as a distinct, specialized model class, separate from chat/generation models — "transformational tools that convert text into numerical representations for downstream applications."
