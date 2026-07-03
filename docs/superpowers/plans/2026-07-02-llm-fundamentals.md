@@ -16,7 +16,7 @@
 - Every page must be readable with JS disabled (figures show a sensible static initial state).
 - All internal links relative (no leading `/`), so pages work under the `/<repo>/` GitHub Pages path.
 - Notes are written for a software developer with zero ML background. Every note has a "Pro vs. amateur" section and a "References" section with real URLs.
-- Content accuracy: every factual claim in notes/pages must be something you can source to the referenced material. No invented numbers.
+- **Research-first rule:** every concept task (Tasks 2–9) starts with the Research protocol below. Notes and pages may only state facts traceable to that concept's `research/NN-*.md` dump — no claims from model memory alone, no invented numbers. If a fact can't be sourced, cut it or find a source and add it to the dump.
 - Work happens on branch `basic-concepts`. Commit after every task.
 - Interactive figures use precomputed/toy data embedded in the page. The tokenizer demo is illustrative, not real BPE, and must be labeled "illustrative" on the page.
 
@@ -39,6 +39,29 @@ for f in docs.glob("*.html"):
 print("\n".join(bad)); sys.exit(1 if bad else 0)
 EOF
 ```
+
+## Research protocol (applies to every concept task, Tasks 2–9)
+
+Before writing the note, create `research/NN-<same-stem-as-note>.md`:
+
+1. Fetch **every** reference URL listed in the task (WebFetch; for YouTube videos fetch the video page for title/author/date and note the key claims the video makes that you rely on). If a fetch fails or a URL is dead, find a replacement source from the same organization/author and update the task's reference list to match.
+2. For each source, append a block:
+
+```markdown
+## [S1] Title of source
+- **URL:** https://…
+- **Fetched:** YYYY-MM-DD
+- **Type:** paper | docs | video | post
+
+### Extracted
+- Key claim / number / definition, as close to the source's wording as useful (quote directly where the wording matters).
+- …
+```
+
+3. While drafting the note, tag every load-bearing fact with its source id (`[S1]`) inline in the note's prose or as a trailing reference on the bullet. A fact with no tag either gets a source added to the dump or gets cut.
+4. The research dump is committed together with the note and page in the task's commit (`git add research/NN-*.md notes/NN-*.md docs/NN-*.html`).
+
+The dump is raw working material — completeness beats polish. It exists so a reviewer can trace any sentence in `notes/` or `docs/` back to a real fetched source.
 
 ---
 
@@ -238,6 +261,7 @@ For page 01 the pager's prev slot is `<span class="gap"></span>`; for page 08 th
 ### Task 2: Concept 01 — What is an LLM (note + page) — PATTERN VALIDATOR
 
 **Files:**
+- Create: `research/01-what-is-an-llm.md` (per Research protocol)
 - Create: `notes/01-what-is-an-llm.md`
 - Create: `docs/01-what-is-an-llm.html`
 
@@ -311,7 +335,7 @@ showDist();
 
 - [ ] **Step 3: Verify** — `open docs/01-what-is-an-llm.html`: figure steps through all 5 tokens and disables cleanly; video loads; zero console errors; with JS disabled the prompt text still reads.
 
-- [ ] **Step 4: Commit** — `git add notes/01-what-is-an-llm.md docs/01-what-is-an-llm.html && git commit -m "feat: concept 01 — what is an LLM (note + page)"`
+- [ ] **Step 4: Commit** — `git add research/01-what-is-an-llm.md notes/01-what-is-an-llm.md docs/01-what-is-an-llm.html && git commit -m "feat: concept 01 — what is an LLM (note + page)"`
 
 - [ ] **Step 5: CHECKPOINT — request user review of note depth + page look before Task 3.**
 
@@ -320,6 +344,7 @@ showDist();
 ### Task 3: Concept 02 — Tokens & tokenization
 
 **Files:**
+- Create: `research/02-tokens-and-tokenization.md` (per Research protocol)
 - Create: `notes/02-tokens-and-tokenization.md`
 - Create: `docs/02-tokens-and-tokenization.html`
 
@@ -373,13 +398,14 @@ render();
 
 - [ ] **Step 3: Verify** — `open docs/02-tokens-and-tokenization.html`: typing retokenizes live, count updates, colors cycle. Zero console errors.
 
-- [ ] **Step 4: Commit** — `git add notes/02-tokens-and-tokenization.md docs/02-tokens-and-tokenization.html && git commit -m "feat: concept 02 — tokens and tokenization"`
+- [ ] **Step 4: Commit** — `git add research/02-tokens-and-tokenization.md notes/02-tokens-and-tokenization.md docs/02-tokens-and-tokenization.html && git commit -m "feat: concept 02 — tokens and tokenization"`
 
 ---
 
 ### Task 4: Concept 03 — Embeddings
 
 **Files:**
+- Create: `research/03-embeddings.md` (per Research protocol)
 - Create: `notes/03-embeddings.md`
 - Create: `docs/03-embeddings.html`
 
@@ -448,13 +474,14 @@ ft.textContent = "HOVER A WORD TO SEE ITS NEIGHBORS";
 
 - [ ] **Step 3: Verify** — hover highlights neighbors + dashed lines, footer updates, mouseleave resets. Zero console errors.
 
-- [ ] **Step 4: Commit** — `git add notes/03-embeddings.md docs/03-embeddings.html && git commit -m "feat: concept 03 — embeddings"`
+- [ ] **Step 4: Commit** — `git add research/03-embeddings.md notes/03-embeddings.md docs/03-embeddings.html && git commit -m "feat: concept 03 — embeddings"`
 
 ---
 
 ### Task 5: Concept 04 — Attention & transformers
 
 **Files:**
+- Create: `research/04-attention-and-transformers.md` (per Research protocol)
 - Create: `notes/04-attention-and-transformers.md`
 - Create: `docs/04-attention-and-transformers.html`
 
@@ -497,13 +524,14 @@ draw();
 
 - [ ] **Step 3: Verify** — stepping cycles tokens 1→9→1; `it` step shows `ball` dominant; zero console errors.
 
-- [ ] **Step 4: Commit** — `git add notes/04-attention-and-transformers.md docs/04-attention-and-transformers.html && git commit -m "feat: concept 04 — attention and transformers"`
+- [ ] **Step 4: Commit** — `git add research/04-attention-and-transformers.md notes/04-attention-and-transformers.md docs/04-attention-and-transformers.html && git commit -m "feat: concept 04 — attention and transformers"`
 
 ---
 
 ### Task 6: Concept 05 — Context window
 
 **Files:**
+- Create: `research/05-context-window.md` (per Research protocol)
 - Create: `notes/05-context-window.md`
 - Create: `docs/05-context-window.html`
 
@@ -558,13 +586,14 @@ reset();
 
 - [ ] **Step 3: Verify** — adding turns/docs grows segments; overflow evicts history and shows the eviction message; reset works; zero console errors.
 
-- [ ] **Step 4: Commit** — `git add notes/05-context-window.md docs/05-context-window.html && git commit -m "feat: concept 05 — context window"`
+- [ ] **Step 4: Commit** — `git add research/05-context-window.md notes/05-context-window.md docs/05-context-window.html && git commit -m "feat: concept 05 — context window"`
 
 ---
 
 ### Task 7: Concept 06 — Sampling
 
 **Files:**
+- Create: `research/06-sampling.md` (per Research protocol)
 - Create: `notes/06-sampling.md`
 - Create: `docs/06-sampling.html`
 
@@ -625,13 +654,14 @@ compute();
 
 - [ ] **Step 3: Verify** — temp slider reshapes bars (0.1 ≈ all "Paris", 2.0 ≈ flat); top-p dims tail with CUT; Sample highlights and varies across clicks at temp 1; zero console errors.
 
-- [ ] **Step 4: Commit** — `git add notes/06-sampling.md docs/06-sampling.html && git commit -m "feat: concept 06 — sampling"`
+- [ ] **Step 4: Commit** — `git add research/06-sampling.md notes/06-sampling.md docs/06-sampling.html && git commit -m "feat: concept 06 — sampling"`
 
 ---
 
 ### Task 8: Concept 07 — How models are trained
 
 **Files:**
+- Create: `research/07-how-models-are-trained.md` (per Research protocol)
 - Create: `notes/07-how-models-are-trained.md`
 - Create: `docs/07-how-models-are-trained.html`
 
@@ -674,13 +704,14 @@ draw();
 
 - [ ] **Step 3: Verify** — stepping cycles the three stages, response text and footer change; zero console errors.
 
-- [ ] **Step 4: Commit** — `git add notes/07-how-models-are-trained.md docs/07-how-models-are-trained.html && git commit -m "feat: concept 07 — how models are trained"`
+- [ ] **Step 4: Commit** — `git add research/07-how-models-are-trained.md notes/07-how-models-are-trained.md docs/07-how-models-are-trained.html && git commit -m "feat: concept 07 — how models are trained"`
 
 ---
 
 ### Task 9: Concept 08 — Scaling laws & model sizes
 
 **Files:**
+- Create: `research/08-scaling-laws-and-model-sizes.md` (per Research protocol)
 - Create: `notes/08-scaling-laws-and-model-sizes.md`
 - Create: `docs/08-scaling-laws-and-model-sizes.html`
 
@@ -692,7 +723,7 @@ draw();
 
 - [ ] **Step 3: Verify** — hover shows tooltip + footer line per model; zero console errors.
 
-- [ ] **Step 4: Commit** — `git add notes/08-scaling-laws-and-model-sizes.md docs/08-scaling-laws-and-model-sizes.html && git commit -m "feat: concept 08 — scaling laws and model sizes"`
+- [ ] **Step 4: Commit** — `git add research/08-scaling-laws-and-model-sizes.md notes/08-scaling-laws-and-model-sizes.md docs/08-scaling-laws-and-model-sizes.html && git commit -m "feat: concept 08 — scaling laws and model sizes"`
 
 ---
 

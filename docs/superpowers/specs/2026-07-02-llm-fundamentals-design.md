@@ -16,6 +16,9 @@ A learning project that doubles as a teaching tool. Ignacio (software dev, new t
 
 ```
 llm-intuition/
+├── research/                         # raw source dumps, one per concept
+│   ├── 01-what-is-an-llm.md          # per source: URL, fetch date, extracted content
+│   └── … (02–08, same stems as notes/)
 ├── notes/                            # deep-dive markdown study notes
 │   ├── 01-what-is-an-llm.md
 │   ├── 02-tokens-and-tokenization.md
@@ -45,7 +48,9 @@ Dark terminal-HUD aesthetic (validated via live sample, artifact `0c18eaf0`):
 
 ## Per-concept content pattern
 
-Each concept ships as a pair, markdown first:
+Each concept ships as a triple — research first, then note, then page:
+
+**Research dump** (`research/NN-*.md`): every reference URL is actually fetched; for each source the dump records the URL, fetch date, and the extracted key content (quotes, numbers, claims). **Notes and pages may only state facts traceable to this file** — no claims from model memory alone. If a fact can't be sourced, it doesn't ship.
 
 **Markdown note** (`notes/NN-*.md`):
 1. Explanation from first principles (assumes software dev, zero ML)
