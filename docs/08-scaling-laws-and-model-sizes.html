@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 · Scaling Laws &amp; Model Sizes — llm::intuition</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">Index</a>
+    <a href="01-what-is-an-llm.html">01</a>
+    <a href="02-tokens-and-tokenization.html">02</a>
+    <a href="03-embeddings.html">03</a>
+    <a href="04-attention-and-transformers.html">04</a>
+    <a href="05-context-window.html">05</a>
+    <a href="06-sampling.html">06</a>
+    <a href="07-how-models-are-trained.html">07</a>
+    <a href="08-scaling-laws-and-model-sizes.html" class="on">08</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module 01 / Concept 08</span>
+    <h1>Scaling Laws &amp; Model <span class="hl">Sizes</span></h1>
+    <p class="sub">Model quality improves on smooth, predictable curves as compute grows — smooth enough that labs bet billions on where the curve goes next. Reading those curves is also how you pick the right model for a job.</p>
+    <div class="meta"><span>Read <b>10 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Note 07</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> SCALING CURVE / INTERACTIVE</span><span>LOSS VS COMPUTE · ILLUSTRATIVE</span></div>
+    <div class="panel-body" id="fig">
+      <svg id="scale-svg" viewBox="0 0 560 340" style="width:100%;max-width:560px;display:block">
+        <path d="M60,80 C78.3,90.0 131.7,122.5 170,140 C208.3,157.5 251.7,170.8 290,185 C328.3,199.2 365.0,213.3 400,225 C435.0,236.7 483.3,250.0 500,255" fill="none" stroke="#263039" stroke-width="2"/>
+        <line x1="40" y1="300" x2="530" y2="300" stroke="#263039" stroke-width="1"/>
+        <line x1="40" y1="300" x2="40" y2="50" stroke="#263039" stroke-width="1"/>
+        <text x="285" y="325" fill="#4a4f55" font-size="12" font-family="ui-monospace,Menlo,monospace" text-anchor="middle">TRAINING COMPUTE →</text>
+        <text x="20" y="175" fill="#4a4f55" font-size="12" font-family="ui-monospace,Menlo,monospace" text-anchor="middle" transform="rotate(-90 20 175)">LOSS ↓</text>
+        <g class="pt" data-i="0">
+          <circle cx="60" cy="80" r="5" fill="#0068b5"/>
+          <text x="60" y="66" fill="#969ca3" font-size="11" font-family="ui-monospace,Menlo,monospace" text-anchor="middle">GPT-2</text>
+        </g>
+        <g class="pt" data-i="1">
+          <circle cx="170" cy="140" r="5" fill="#0068b5"/>
+          <text x="170" y="126" fill="#969ca3" font-size="11" font-family="ui-monospace,Menlo,monospace" text-anchor="middle">GPT-3</text>
+        </g>
+        <g class="pt" data-i="2">
+          <circle cx="290" cy="185" r="5" fill="#0068b5"/>
+          <text x="290" y="171" fill="#969ca3" font-size="11" font-family="ui-monospace,Menlo,monospace" text-anchor="middle">Chinchilla</text>
+        </g>
+        <g class="pt" data-i="3">
+          <circle cx="400" cy="225" r="5" fill="#0068b5"/>
+          <text x="400" y="211" fill="#969ca3" font-size="11" font-family="ui-monospace,Menlo,monospace" text-anchor="middle">GPT-4 class</text>
+        </g>
+        <g class="pt" data-i="4">
+          <circle cx="500" cy="255" r="5" fill="#0068b5"/>
+          <text x="500" y="241" fill="#969ca3" font-size="11" font-family="ui-monospace,Menlo,monospace" text-anchor="middle">Frontier</text>
+        </g>
+        <g id="scale-tip"></g>
+      </svg>
+    </div>
+    <div class="panel-ft" id="fig-ft">HOVER A MODEL — THE CURVE WAS DRAWN BEFORE THE MODELS WERE</div>
+  </div>
+  <div class="figure-note">Axes are unlabeled on purpose — the shape is the lesson, not the numbers.</div>
+
+  <div class="prose">
+    <h2>The curves</h2>
+    <p>// The curves — the single biggest reason labs are comfortable spending hundreds of millions of dollars training a model before they've seen it work is that they don't have to guess how good it'll be. Kaplan et al.'s scaling laws paper found that language model loss "scales as a power-law with model size, dataset size, and the amount of compute used for training, with some trends spanning more than seven orders of magnitude." That's an unusually strong empirical regularity: plot loss against any of those three quantities on a log-log chart, and instead of noisy scatter you get a nearly straight line. Architecture barely matters by comparison — the same paper notes "Other architectural details such as network width or depth have minimal effects within a wide range."</p>
+    <p>That predictability is what turns scaling from a guess into a bet you can size. Run a small, cheap version and its loss lands where the curve predicts, and you can extrapolate that same curve out to a run 1,000x larger with real confidence in roughly where the loss will land — before spending the money. The original scaling-laws paper went further and used the curves prescriptively, concluding that "optimally compute-efficient training involves training very large models on a relatively modest amount of data and stopping significantly before convergence." That specific recipe — bigger model, comparatively less data — became the default assumption behind a wave of very large models. It's also the exact assumption Chinchilla overturned two years later.</p>
+
+    <h2>Chinchilla's correction</h2>
+    <p>// Chinchilla's correction — Hoffmann et al. revisited the same optimization question and reached a different answer: "current large language models are significantly undertrained, a consequence of the recent focus on scaling language models whilst keeping the amount of training data constant." Labs had been following the bigger-model-don't-worry-as-much-about-data reading of the earlier work, and Chinchilla's authors argue that left quality on the table. Training over 400 models across a wide range of sizes and token counts, they arrived at a cleaner rule: "for compute-optimal training, the model size and the number of training tokens should be scaled equally: for every doubling of model size the number of training tokens should also be doubled." Parameters and data aren't independent knobs — for a fixed compute budget, there's a ratio that gets the most loss reduction per dollar, and it isn't simply making the model as big as possible.</p>
+    <p>The paper backs this with an actual model. Chinchilla used the same compute budget as Gopher but with 70B parameters and, per the abstract, roughly four times as much training data. The result: it "uniformly and significantly outperforms Gopher (280B), GPT-3 (175B), Jurassic-1 (178B), and Megatron-Turing NLG (530B) on a large range of downstream evaluation tasks" — a model a quarter Gopher's size, and well under a third the size of GPT-3, beating both, with a smaller model that's also cheaper to run afterward: Chinchilla "uses substantially less compute for fine-tuning and inference, greatly facilitating downstream usage." Smaller but trained longer won, and it won twice — once on quality, once on the bill for every inference call that followed.</p>
+    <p>Scaling laws also predict loss, not every downstream skill directly, and that gap is its own paper's subject. Wei et al. describe "an unpredictable phenomenon that we refer to as emergent abilities of large language models" — abilities "not present in smaller models but... present in larger models." Such abilities, in the paper's words, "cannot be predicted simply by extrapolating the performance of smaller models." Loss falls smoothly the whole time; specific task accuracy can still jump at a size threshold instead of creeping up gradually, because task accuracy is a coarser, thresholded read on the same underlying improvement. That's part of why labs keep scaling past the point any one benchmark demanded: as the paper puts it, "The existence of such emergence implies that additional scaling could further expand the range of capabilities of language models" — some of what the next size tier can do may simply not be visible at the current one.</p>
+
+    <h2>The size spectrum in practice</h2>
+    <p>// The size spectrum in practice — none of this means every deployed model should be as large as possible. In practice, models ship across a spectrum — small, fast, cheap models at one end, frontier-scale models at the other — and picking a point on it is a real engineering decision. Anthropic's own lineup makes the trade-off explicit: several models sold side by side, described along the same axes of cost, speed, and capability, with guidance framed as a live choice rather than one default — "If you're unsure which model to use, start with" a specific recommended model, with a separate note for "workloads that need the highest available capability". A small model is cheaper per token and faster; a frontier model costs more and takes longer per response but reaches further. Distillation is how a smaller model inherits some of a larger one's quality — training a compact model to imitate a bigger model's outputs — which is part of why "fast and cheap" doesn't have to mean "weak."</p>
+    <p>Inference cost scales with size in a way training cost never gets the chance to: training happens once, but every API call to a deployed model burns compute proportional to that model's size, for as long as it stays in production. A model 10x the size of another isn't just 10x the training cost — it's roughly 10x the cost of every response it ever generates, across however many millions of calls it serves. That's why model choice is an engineering trade-off, not a solved default of always picking the biggest one available.</p>
+
+    <h2>Pro vs. amateur</h2>
+    <p>// Pro vs. amateur — amateurs think bigger is better is still the whole story; pros know that stopped being true in 2022. Chinchilla's entire contribution was showing that a large fraction of pre-2022 models were undertrained relative to their size — parameter count alone never predicted quality, the compute-optimal ratio of parameters to training data did. Post-Chinchilla, data quality and post-training (note 07) do at least as much work as raw parameter count in how good a model actually feels to use.</p>
+    <p>Amateurs treat parameter count as a reliable proxy for quality across model families; pros know it's a weak signal outside one consistent training recipe. Two same-sized models from different labs, trained on different data with different post-training, can differ enormously — a well-trained smaller model can beat an older, larger one, exactly the shape of Chinchilla's own result against Gopher and GPT-3. Parameter count only compares cleanly within a family trained the same way.</p>
+    <p>Amateurs default to the biggest available model for every task; pros treat latency, cost, and quality as a three-way trade and route deliberately. Because inference cost and latency scale with size, and production lineups are explicitly built and priced across a size spectrum, the efficient move is routing easy, high-volume tasks to small, fast models and reserving frontier models for requests that actually need the extra capability.</p>
+    <p>Amateurs trust leaderboard rankings as ground truth; pros know benchmarks saturate and get gamed, and trust task-specific evals instead. A model's leaderboard position says less than it looks like once a benchmark is old enough to leak into training data, or narrow enough to be optimized against directly. The only eval that reliably predicts performance on your task is one built from your task's own data and failure modes.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://arxiv.org/abs/2001.08361"><span class="src">Paper · Kaplan et al. 2020</span><span class="t">Scaling Laws for Neural Language Models</span></a>
+    <a class="ref" href="https://arxiv.org/abs/2203.15556"><span class="src">Paper · Hoffmann et al. 2022</span><span class="t">Training Compute-Optimal Large Language Models (Chinchilla)</span></a>
+    <a class="ref" href="https://arxiv.org/abs/2206.07682"><span class="src">Paper · Wei et al. 2022</span><span class="t">Emergent Abilities of Large Language Models</span></a>
+    <a class="ref" href="https://platform.claude.com/docs/en/docs/about-claude/models/overview"><span class="src">Docs · Anthropic</span><span class="t">Models overview</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="07-how-models-are-trained.html">← 07 · How Models Are Trained</a>
+    <span class="gap"></span>
+  </nav>
+</main>
+<script>
+const DOTS = [
+  [60,80,"GPT-2","2019 · 1.5B","OPENAI'S FIRST HEADLINE-MAKER"],
+  [170,140,"GPT-3","2020 · 175B","SCALE ALONE UNLOCKED IN-CONTEXT LEARNING"],
+  [290,185,"Chinchilla","2022 · 70B","SMALLER BUT TRAINED ON 4× THE DATA — BEAT MODELS 2.5× ITS SIZE"],
+  [400,225,"GPT-4 class","2023 · undisclosed","CURVES PREDICTED ITS LOSS BEFORE IT WAS TRAINED"],
+  [500,255,"Frontier","2025 · undisclosed","POST-TRAINING NOW MATTERS AS MUCH AS SCALE"],
+];
+const DEFAULT_FT = "HOVER A MODEL — THE CURVE WAS DRAWN BEFORE THE MODELS WERE";
+const svg = document.getElementById("scale-svg"), ft = document.getElementById("fig-ft"), tip = document.getElementById("scale-tip");
+svg.querySelectorAll(".pt").forEach(g => {
+  const d = DOTS[+g.dataset.i];
+  const [x,y,name,when,line] = d;
+  g.addEventListener("mouseenter", () => {
+    g.querySelector("circle").setAttribute("fill", "#00c7fd");
+    g.querySelector("text").setAttribute("fill", "#00c7fd");
+    const boxX = x > 400 ? x - 160 : x + 10;
+    tip.innerHTML = `
+      <rect x="${boxX}" y="${y-46}" width="150" height="34" fill="#0b0d10" stroke="#00c7fd" stroke-width="1"/>
+      <text x="${boxX+8}" y="${y-30}" fill="#e8eaed" font-size="12" font-family="ui-monospace,Menlo,monospace" font-weight="bold">${name}</text>
+      <text x="${boxX+8}" y="${y-16}" fill="#969ca3" font-size="11" font-family="ui-monospace,Menlo,monospace">${when}</text>`;
+    ft.textContent = `${name.toUpperCase()} — ${line}`;
+  });
+  g.addEventListener("mouseleave", () => {
+    g.querySelector("circle").setAttribute("fill", "#0068b5");
+    g.querySelector("text").setAttribute("fill", "#969ca3");
+    tip.innerHTML = "";
+    ft.textContent = DEFAULT_FT;
+  });
+});
+ft.textContent = DEFAULT_FT;
+</script>
+</body>
+</html>
