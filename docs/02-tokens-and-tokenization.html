@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Tokens &amp; Tokenization — llm::intuition</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">Index</a>
+    <a href="01-what-is-an-llm.html">01</a>
+    <a href="02-tokens-and-tokenization.html" class="on">02</a>
+    <a href="03-embeddings.html">03</a>
+    <a href="04-attention-and-transformers.html">04</a>
+    <a href="05-context-window.html">05</a>
+    <a href="06-sampling.html">06</a>
+    <a href="07-how-models-are-trained.html">07</a>
+    <a href="08-scaling-laws-and-model-sizes.html">08</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module 01 / Concept 02</span>
+    <h1>Tokens &amp; Tokeni<span class="hl">z</span>ation</h1>
+    <p class="sub">A model never sees words. It sees tokens — subword fragments from a fixed vocabulary, learned from data, that stand between your text and everything the network does with it.</p>
+    <div class="meta"><span>Read <b>9 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Note 01</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> TOKENIZER / INTERACTIVE</span><span>ILLUSTRATIVE · NOT REAL BPE</span></div>
+    <div class="panel-body" id="fig">
+      <textarea id="tok-in" rows="2">The transformer reads subword pieces, not words.</textarea>
+      <div id="tok-out" style="font-size:1.05rem;line-height:2.2;margin-top:16px;"></div>
+    </div>
+    <div class="panel-ft" id="fig-ft">SEQUENCE LENGTH: 0 TOKENS · 0 CHARS</div>
+  </div>
+  <div class="figure-note">This split is illustrative. Real tokenizers (BPE) learn their merges from data — try the OpenAI tokenizer playground for the real thing.</div>
+
+  <div class="prose">
+    <h2>Why subwords</h2>
+    <p>An LLM never sees words, sentences, or characters. It sees tokens — "the smallest individual units of a language model," which "can correspond to words, subwords, characters, or even bytes" depending on the tokenizer. One token per character would work, but sequences get too long: a paragraph that's 40 tokens under a subword scheme can be 200+ characters under a character scheme, and both context length and compute scale with sequence length (note 05). One token per whole word has the opposite problem: vocabulary explosion. A fixed vocabulary can't hold every word form, code identifier, and non-English string a user might type, and the paper that introduced subword segmentation for translation frames the mismatch directly: "Neural machine translation (NMT) models typically operate with a fixed vocabulary, but translation is an open-vocabulary problem." Subwords are the middle ground — fragments smaller than most words, larger than single characters, drawn from a fixed vocabulary typically in the 50,000–200,000 range, with individual bytes as the always-available fallback for anything the vocabulary has never seen.</p>
+
+    <h2>How BPE carves text</h2>
+    <p>The dominant algorithm is byte pair encoding (BPE). A real byte-level BPE tokenizer starts from raw bytes — "tokens initially go from 0 to 255... because we start with UTF-8 encoded bytes, and each byte can hold values from 0 to 255" — which guarantees any string in any language can always be represented. From there it's a purely statistical loop: count how often every pair of adjacent tokens occurs across a huge training corpus, merge whichever pair is most frequent into one new token, and repeat — "iteratively identify pairs... that appear the most often, define new tokens based on those, and replace them in the string... repeatedly merges the most frequent adjacent pair" — until the vocabulary hits its target size. Nobody hand-writes the rule that "ing" should be a token; it earns a slot because the merge process finds that byte sequence frequent enough. Production tokenizers add one more step before merging: GPT-2's tokenizer "applies a preprocessing chunking step using regex that segments text and runs BPE only within chunks to prevent undesirable merges such as joining words to punctuation."</p>
+
+    <h2>One text, many tokenizations</h2>
+    <p>Because the vocabulary and merges are learned from a specific training corpus, different model families end up with different tokenizers — and the same string can tokenize to a different number of tokens depending on which one reads it. This is measurable, not hypothetical: Anthropic's docs state that a newer tokenizer "produces approximately 30% more tokens than on earlier models" for identical input text, and warn against "reusing counts measured against earlier models" when estimating cost or context fit. Special tokens ride alongside the ordinary vocabulary too — BOS/EOS markers that flag where a sequence starts and ends, and chat-format markers that tell a fine-tuned model where a user's turn ends and the assistant's turn begins (note 01 covers that fine-tuning step). None of these are produced by BPE merges on user text; they're reserved IDs inserted at fixed points.</p>
+
+    <h2>Pro vs. amateur</h2>
+    <p>Amateurs budget prompts in words; pros budget in tokens, because context windows and pricing are both denominated in tokens, and the standard rule of thumb — "1 token ≈ ¾ of a word" for English, about 1.3 tokens per word — quietly breaks down for code and non-Latin scripts. Amateurs treat a token count as a fixed property of a string; pros know it's a property of (string, tokenizer) together, since the same text can produce 30% more tokens on one model's tokenizer than another's. Amateurs are baffled when a model mangles a username or a long number; pros recognize a rare string that fragmented into unfamiliar byte-level pieces. Amateurs treat leading whitespace as cosmetic; pros know " hello" and "hello" are frequently different tokens entirely, which matters the moment you're concatenating prompt strings by hand. And amateurs expect reliable spelling or letter-counting from a model; pros know it never had character-level access to begin with — it can only approximate an answer statistically, not iterate over letters the way code would.</p>
+  </div>
+
+  <div class="video"><iframe src="https://www.youtube.com/embed/zduSFxRajkE" title="Let's build the GPT Tokenizer" allowfullscreen loading="lazy"></iframe></div>
+
+  <div class="refs">
+    <a class="ref" href="https://www.youtube.com/watch?v=zduSFxRajkE"><span class="src">Video · Andrej Karpathy</span><span class="t">Let's build the GPT Tokenizer</span></a>
+    <a class="ref" href="https://platform.openai.com/tokenizer"><span class="src">Tool · OpenAI</span><span class="t">Tokenizer playground</span></a>
+    <a class="ref" href="https://github.com/openai/tiktoken"><span class="src">Code · OpenAI</span><span class="t">tiktoken</span></a>
+    <a class="ref" href="https://arxiv.org/abs/1508.07909"><span class="src">Paper · Sennrich et al. 2015</span><span class="t">Neural Machine Translation of Rare Words with Subword Units</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="01-what-is-an-llm.html">← 01 · What is an LLM</a>
+    <a class="next" href="03-embeddings.html">03 · Embeddings →</a>
+  </nav>
+</main>
+<script>
+const COMMON = ["the","ing","tion","er","re","sub","form","and","is","not","word","piece","read"];
+function toyTokenize(text){
+  const out = [];
+  for (const word of text.split(/(\s+)/)){
+    if (!word) continue;
+    if (/^\s+$/.test(word)) { if (out.length) out[out.length-1].glue = word; continue; }
+    let rest = word.toLowerCase(), orig = word, pos = 0;
+    while (rest.length){
+      const hit = COMMON.find(c => rest.startsWith(c));
+      const n = hit ? hit.length : Math.min(rest.length, 4);
+      out.push({s: orig.slice(pos, pos + n), glue: ""});
+      pos += n; rest = rest.slice(n);
+    }
+  }
+  return out;
+}
+const inp = document.getElementById("tok-in"), out = document.getElementById("tok-out"),
+      ft = document.getElementById("fig-ft");
+function render(){
+  const toks = toyTokenize(inp.value);
+  out.innerHTML = toks.map((t,i) =>
+    `<span class="tk c${i%5+1}">${t.glue.replace(/ /g,"&nbsp;")}${t.s}</span>`).join("");
+  ft.innerHTML = `SEQUENCE LENGTH: <b>${toks.length} TOKENS</b> · ${inp.value.length} CHARS`;
+}
+inp.addEventListener("input", render);
+render();
+</script>
+</body>
+</html>
