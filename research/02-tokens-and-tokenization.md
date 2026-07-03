@@ -17,12 +17,11 @@
 - **URL:** https://platform.openai.com/tokenizer
 - **Fetched:** 2026-07-02 (attempted; returned HTTP 403 to the fetch tool — same class of block as an authenticated/bot-gated interactive app)
 - **Type:** docs (interactive tool)
-- **Note:** Could not fetch the live page directly. It is not dead (it's a real, actively linked OpenAI tool), just inaccessible to the fetcher, so per protocol it is kept as the reference URL and its underlying claims (tokens vs. words, live tokenization) are corroborated via the OpenAI Help Center article below, which was reachable through search.
+- **Note:** Could not fetch the live page directly. It is not dead (it's a real, actively linked OpenAI tool), just inaccessible to the fetcher, so per protocol it is kept as the reference URL and its underlying claims (tokens vs. words, live tokenization) are corroborated via [S8], OpenAI's developer docs Key concepts page, which was fetched directly.
 
-### Extracted (corroboration via search of help.openai.com)
-- From OpenAI Help Center, "What are tokens and how to count them?" (https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them): "Tokens are the building blocks of text that OpenAI models process. They can be as short as a single character or as long as a full word, depending on the language and context. Spaces, punctuation, and partial words all contribute to token counts."
-- Rule of thumb quoted from that same article: "1 token ≈ 4 characters" and "1 token ≈ ¾ of a word" for English — equivalently, roughly 1.33 tokens per word.
-- "API usage is priced per token, varying by model and whether tokens are input, output, or cached."
+### Extracted (corroboration via [S8], fetched directly)
+- The playground is the "tokenizer tool" OpenAI's own docs point users to "to test specific strings and observe how text converts into tokens" [see S8].
+- The token/word rule of thumb it illustrates, per [S8]: "1 token is approximately 4 characters or 0.75 words for English text."
 
 ## [S3] tiktoken (GitHub)
 - **URL:** https://github.com/openai/tiktoken
@@ -85,12 +84,27 @@
 - "Recount prompts against the model you plan to use rather than reusing counts measured against earlier models" — reinforces that token counts are not a fixed, model-independent property of a string.
 - Token counting endpoint example: `{"input_tokens": 14}` for the short message "Hello, Claude" with system prompt "You are a scientist" — a concrete illustration that a handful of words produces a distinct, non-word-equal token count.
 
-## [S8] OpenAI Help Center — What are tokens and how to count them?
-- **URL:** https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them
-- **Fetched:** 2026-07-02 (direct fetch returned HTTP 403; content corroborated via search-engine snippet of the same page)
+## [S8] OpenAI developer docs — Key concepts
+- **URL:** https://developers.openai.com/api/docs/concepts
+- **Fetched:** 2026-07-02
 - **Type:** docs
-- **Note:** Same 403-to-fetcher situation as [S2] (both are OpenAI-hosted, bot-gated). Kept because it directly supports the tokens/words ratio claim; the search snippet is treated as a paraphrase, and only the exact bracketed phrase below is used as a would-be quote in the note (with attribution, not styled as a blockquote lifted from a fetched page).
+- **Note:** Extra source, fetched directly. Replaces an earlier snippet-only corroboration of the OpenAI Help Center article; this page states the tokens/words rule of thumb in OpenAI's own developer documentation.
 
 ### Extracted
-- Rule of thumb (as surfaced via search): "1 token ≈ 4 characters" and "1 token ≈ ¾ of a word" for English text — i.e., roughly 1.33 tokens per word, matching the commonly cited "English ≈ 1.3 tokens/word" figure.
-- "Spaces, punctuation, and partial words all contribute to token counts."
+- "Tokens represent commonly occurring sequences of characters."
+- Rule of thumb, verbatim: "1 token is approximately 4 characters or 0.75 words for English text." — equivalently, roughly 1.3 tokens per word of English.
+- The docs point users to OpenAI's tokenizer tool "to test specific strings and observe how text converts into tokens."
+- Context limits are denominated in tokens: "the prompt and the generated output combined must be no more than the model's maximum context length."
+
+## [S9] minbpe lecture.md (Karpathy — text version of the "Let's build the GPT Tokenizer" lecture)
+- **URL:** https://github.com/karpathy/minbpe/blob/master/lecture.md (fetched raw: https://raw.githubusercontent.com/karpathy/minbpe/master/lecture.md)
+- **Fetched:** 2026-07-02
+- **Type:** docs (lecture transcript in text form, creator-owned)
+- **Note:** Extra source. This is the written form of [S1]'s lecture, in Karpathy's own repo — used to source whitespace and spelling claims with direct quotes.
+
+### Extracted
+- On leading whitespace being part of the token, verbatim: "The token \" is\" (note that these is three characters, including the space in the front, this is important!) is index 318. Be careful with whitespace because it is absolutely present in the string and must be tokenized along with all the other characters, but is usually omitted in visualization for clarity." — i.e. " is" (with leading space) and "is" are different tokens with different IDs; the same applies to " at" (379), " the" (262), etc.
+- On numbers fragmenting arbitrarily, verbatim: "numbers may be inconsistently decomposed by the tokenizer. For example, the number 127 is a single token of three characters, but the number 677 because two tokens: the token \" 6\" (again, note the space in the front!) and the token \"77\"." (sic — typos are in the original)
+- On spelling, verbatim: "Why can't LLM spell words? **Tokenization**."
+- "tokens are the fundamental \"atoms\" at the input to the LLM. And tokenization is the process for taking raw strings in Python and converting them to a list of tokens, and vice versa."
+- On BPE vocabularies: schemes "work not on a character level, but on character chunk level. And the way these chunk vocabularies are constructed is by using algorithms such as the **Byte Pair Encoding** (BPE) algorithm."
