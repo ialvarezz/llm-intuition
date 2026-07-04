@@ -30,6 +30,8 @@ Key facts extracted for downstream use:
 
 Arithmetic check for the figure's one-liner ("beat models 2.5× its size"): Gopher at 280B is exactly 4× Chinchilla's 70B (280/70 = 4), not 2.5×. GPT-3 at 175B is exactly 2.5× Chinchilla's 70B (175/70 = 2.5), and the abstract explicitly states Chinchilla outperforms GPT-3 (175B). So "beat models 2.5× its size" is directly supported by the GPT-3 comparison specifically (175B / 70B = 2.5), and "trained on 4× the data" is directly supported by the "4× more [more] data" vs. Gopher line. Both halves of the figure's one-liner trace to this abstract, using two different named comparisons within it (Gopher for the 4× data figure, GPT-3 for the 2.5× size figure).
 
+Compute-optimal tokens-per-parameter ratio ("~20 tokens per parameter"): fetched the full paper text at https://ar5iv.labs.arxiv.org/html/2203.15556 (re-fetched twice, identical both times). Table 1's caption states, verbatim: "Current LLMs. We show five of the current largest dense transformer models, their size, and the number of training tokens. Other than LaMDA (Thoppilan et al., 2022), most models are trained for approximately 300 billion tokens. We introduce Chinchilla, a substantially smaller model, trained for much longer than 300B tokens." Table 1's row for Chinchilla gives, verbatim: "Chinchilla | 70 Billion | 1.4 Trillion" (columns: Model | Size (# Parameters) | Training Tokens). Derivation (arithmetic, not quoted from the source): 1.4 trillion tokens / 70 billion parameters = 20 tokens per parameter. This is the same derivation pattern already used above for the 4×/2.5× figures — the ratio itself is arithmetic performed on two directly-sourced numbers (70B params, 1.4T tokens), not a number the paper states as a ratio outright.
+
 ---
 
 ## [S3] Emergent Abilities of Large Language Models (Wei et al., 2022)
@@ -65,12 +67,28 @@ Notes: This page directly supports the note's claim that model *choice* is a del
 
 ---
 
+## [S5] GPT-4 Technical Report (OpenAI, 2023)
+- **URL:** https://arxiv.org/abs/2303.08774
+- **Fetched:** 2026-07-03
+- **Type:** arXiv paper (OpenAI, 2023)
+
+### Extracted
+Abstract, verbatim: "We report the development of GPT-4, a large-scale, multimodal model which can accept image and text inputs and produce text outputs. While less capable than humans in many real-world scenarios, GPT-4 exhibits human-level performance on various professional and academic benchmarks, including passing a simulated bar exam with a score around the top 10% of test takers. GPT-4 is a Transformer-based model pre-trained to predict the next token in a document. The post-training alignment process results in improved performance on measures of factuality and adherence to desired behavior. A core component of this project was developing infrastructure and optimization methods that behave predictably across a wide range of scales. This allowed us to accurately predict some aspects of GPT-4's performance based on models trained with no more than 1/1,000th the compute of GPT-4."
+
+Note: re-fetched twice independently (once for the specific "predict GPT-4's performance" sentence, once for the full abstract), identical both times — confirmed exact substring of the live abstract page.
+
+Trace for the figure's GPT-4-class one-liner ("CURVES PREDICTED ITS LOSS BEFORE IT WAS TRAINED"): directly supported by "This allowed us to accurately predict some aspects of GPT-4's performance based on models trained with no more than 1/1,000th the compute of GPT-4" — i.e. loss/performance was predicted from smaller-scale runs before the full model was trained, which is the same "predict before training" claim the figure's one-liner makes in shorthand.
+
+---
+
 ## Audit notes
 
 **Direction A (note/page → dump):** every quoted string used in `notes/08-scaling-laws-and-model-sizes.md` and `docs/08-scaling-laws-and-model-sizes.html` was checked against this dump before being used; nothing quoted downstream that isn't verbatim above.
 
-**Direction B (dump → live):** all four dump quotes were re-fetched independently (Kaplan abstract, Chinchilla abstract fetched twice — once directly, once via a scoped re-fetch that returned the identical "4× more more data" string — Wei abstract, Anthropic models-overview page fetched via the redirected URL) and confirmed as exact substrings of the live pages at fetch time. Result: 4/4 sources fetched and confirmed; 0 quotes downgraded to paraphrase except the Chinchilla "4× more more data" oddity, which is reproduced verbatim in this dump but paraphrased ("four times as much data") wherever it's used downstream, since the doubled word is very likely a rendering artifact rather than the source's intended text and quoting it verbatim in the note/page would misrepresent the paper's claim.
+**Direction B (dump → live):** all dump quotes were re-fetched independently (Kaplan abstract, Chinchilla abstract fetched twice — once directly, once via a scoped re-fetch that returned the identical "4× more more data" string — Chinchilla full-text Table 1 caption + row fetched twice via ar5iv, Wei abstract, Anthropic models-overview page fetched via the redirected URL, GPT-4 technical report abstract fetched twice) and confirmed as exact substrings of the live pages at fetch time. Result: 6/6 sources fetched and confirmed; 0 quotes downgraded to paraphrase except the Chinchilla "4× more more data" oddity, which is reproduced verbatim in this dump but paraphrased ("four times as much data") wherever it's used downstream, since the doubled word is very likely a rendering artifact rather than the source's intended text and quoting it verbatim in the note/page would misrepresent the paper's claim.
 
 **Figure one-liner verification (brief's suggested Chinchilla line: "SMALLER BUT TRAINED ON 4× THE DATA — BEAT MODELS 2.5× ITS SIZE"):** supportable directly from S2 — 4× data is the Gopher comparison ("4× more data" vs. Gopher), 2.5× size is the GPT-3 comparison (175B / 70B = 2.5, and the abstract states Chinchilla outperforms GPT-3). Used as specified, no softening needed.
 
-Other figure one-liners (GPT-2, GPT-3, GPT-4-class, Frontier) are framed as illustrative/interpretive commentary tied to the panel's `ILLUSTRATIVE` label rather than as sourced numeric claims — the dot coordinates and curve shape are hand-placed per the brief, not derived from a real loss-vs-compute dataset, and the page's figure-note says as much ("Axes are unlabeled on purpose — the shape is the lesson, not the numbers"). The GPT-3 one-liner ("scale alone unlocked in-context learning") and GPT-4-class/Frontier lines are general, uncontroversial characterizations rather than specific quantitative claims, so they don't require a numeric source the way the Chinchilla line does.
+**Figure one-liner verification (GPT-4-class line: "CURVES PREDICTED ITS LOSS BEFORE IT WAS TRAINED"):** now traced to S5 — the GPT-4 technical report abstract states performance was predicted "based on models trained with no more than 1/1,000th the compute of GPT-4," directly supporting the "predicted...before it was trained" framing.
+
+Other figure one-liners (GPT-2, GPT-3, Frontier) are framed as illustrative/interpretive commentary tied to the panel's `ILLUSTRATIVE` label rather than as sourced numeric claims — the dot coordinates and curve shape are hand-placed per the brief, not derived from a real loss-vs-compute dataset, and the page's figure-note says as much ("Axes are unlabeled on purpose — the shape is the lesson, not the numbers"). The GPT-3 one-liner ("scale alone unlocked in-context learning") and Frontier line are general, uncontroversial characterizations rather than specific quantitative claims, so they don't require a numeric source the way the Chinchilla and GPT-4-class lines do.
