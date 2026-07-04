@@ -36,7 +36,7 @@
       <textarea id="tok-in" rows="2">The transformer reads subword pieces, not words.</textarea>
       <div id="tok-out" style="font-size:1.05rem;line-height:2.2;margin-top:16px;"></div>
     </div>
-    <div class="panel-ft" id="fig-ft">SEQUENCE LENGTH: 0 TOKENS · 0 CHARS</div>
+    <div class="panel-ft" id="fig-ft">SEQUENCE LENGTH: 13 TOKENS · 48 CHARS</div>
   </div>
   <div class="figure-note">This split is illustrative. Real tokenizers (BPE) learn their merges from data — try the OpenAI tokenizer playground for the real thing.</div>
 
@@ -72,14 +72,16 @@
 const COMMON = ["the","ing","tion","er","re","sub","form","and","is","not","word","piece","read"];
 function toyTokenize(text){
   const out = [];
+  let pending = "";
   for (const word of text.split(/(\s+)/)){
     if (!word) continue;
-    if (/^\s+$/.test(word)) { if (out.length) out[out.length-1].glue = word; continue; }
+    if (/^\s+$/.test(word)) { pending = word; continue; }
     let rest = word.toLowerCase(), orig = word, pos = 0;
     while (rest.length){
       const hit = COMMON.find(c => rest.startsWith(c));
       const n = hit ? hit.length : Math.min(rest.length, 4);
-      out.push({s: orig.slice(pos, pos + n), glue: ""});
+      out.push({s: orig.slice(pos, pos + n), glue: pending});
+      pending = "";
       pos += n; rest = rest.slice(n);
     }
   }
