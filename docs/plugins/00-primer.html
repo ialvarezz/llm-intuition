@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>00 · The 15-Minute Primer — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">A1 Index</a>
+    <a href="00-primer.html" class="on">00</a>
+    <a href="01-marketplaces.html">01</a>
+    <a href="02-plugins.html">02</a>
+    <a href="03-mcp-servers.html">03</a>
+    <a href="04-skills.html">04</a>
+    <a href="05-agents.html">05</a>
+    <a href="06-hooks-and-commands.html">06</a>
+    <a href="07-building-a-plugin.html">07</a>
+    <a href="08-claude-copilot-compat.html">08</a>
+    <a href="09-which-one-when.html">09</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module A1 / Concept 00</span>
+    <h1>The 15-Minute <span class="hl">Primer</span></h1>
+    <p class="sub">You don't need a PhD to build AI plugins. You need four ideas: tokens, context, tool calls, and the loop. Here they are — everything else in this module builds on them.</p>
+    <div class="meta"><span>Read <b>7 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>None</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> THE AGENT LOOP</span><span>INTERACTIVE</span></div>
+    <div class="panel-body" id="fig">
+      <div id="loop-boxes" style="display:flex;gap:8px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;"></div>
+      <div id="loop-msg" style="margin-top:16px;padding:14px;border:1px solid var(--line);font-size:.88rem;line-height:1.6;min-height:4.5em;color:var(--fg);"></div>
+      <button class="btn" id="loop-btn" style="margin-top:14px;">Step ▸</button>
+    </div>
+    <div class="panel-ft" id="fig-ft">ONE TASK · FOUR HOPS</div>
+    <div class="figure-note">Every agent you'll meet in this module — and every plugin — lives somewhere on this loop.</div>
+  </div>
+
+  <div class="prose">
+    <h2>Next-token prediction, looped</h2>
+    <p>An LLM predicts the next token — that's the whole operation (see note 01). Chat is that same operation run in a loop: your message becomes tokens, the model predicts a continuation, and your next message extends the sequence and starts the cycle again. The <b>context window</b> is the model's entire working memory — everything it knows about the current conversation has to fit inside it (see note 05). That matters here because every plugin, tool, or piece of injected context competes for space in that same window.</p>
+
+    <h2>Tools: the model asks, the harness acts</h2>
+    <p>A raw LLM can't do anything except emit tokens — it can't run a command or call an API. Tool use lets the model return a structured call describing an action; the surrounding application executes it and sends the result back. The model's job stops at "returns a structured call" — it doesn't touch a filesystem or a network socket. It's also not compelled to call a tool on every turn: it decides, based on the request and the tool's description, whether to call a tool or respond directly.</p>
+
+    <h2>An agent is a loop</h2>
+    <p>Chain that decision together and you get an agent: the model decides, the surrounding program acts, the result comes back into the context window as more tokens, and the cycle repeats until the model decides it's done. A workflow is the same pieces wired along a path a human coded in advance; an agent is those same pieces with the model itself choosing what happens next, turn by turn. Mechanically nothing new is happening — it's the same next-token-prediction loop as ordinary chat, extended so some of each turn's input is tool output instead of a human typing.</p>
+
+    <h2>Plugins extend the harness</h2>
+    <p>The model is fixed — its weights don't change between one tool call and the next. What varies from one agentic coding tool to another is the program wrapped around the model: the thing that reads the model's tool-call output, decides which functions are available, executes them, and feeds the result back in. Call that surrounding program the <b>harness</b> — Claude Code and GitHub Copilot are harnesses in this sense. A plugin is not a modification to the model. It's a modification to the harness: a new tool the harness exposes, a new piece of context it injects, a new command it recognizes. That framing is this module's thesis.</p>
+
+    <h2>Pro vs. amateur</h2>
+    <p>The model never executes anything — every "action" you see an agent take is the harness honoring a structured request the model emitted. Agent quality is mostly a function of harness and context quality, not raw model IQ: the same model looks brilliant or useless depending on what tools it's given and how well they're described. And token costs apply to everything a plugin injects — tool descriptions, retrieved context, and instructions all sit inside the same bounded context window and get billed as input tokens on every turn, whether or not the model ends up using them.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://www.anthropic.com/research/building-effective-agents"><span class="src">Post · Anthropic</span><span class="t">Building Effective Agents</span></a>
+    <a class="ref" href="https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview"><span class="src">Docs · Anthropic</span><span class="t">Tool use with Claude</span></a>
+    <a class="ref" href="https://www.youtube.com/watch?v=zjkBMFhNj_g"><span class="src">Video · Andrej Karpathy</span><span class="t">Intro to Large Language Models</span></a>
+    <a class="ref" href="https://docs.anthropic.com/en/docs/resources/glossary"><span class="src">Docs · Anthropic</span><span class="t">Glossary</span></a>
+    <a class="ref" href="../index.html"><span class="src">Module 01</span><span class="t">Module 01 — the full fundamentals</span></a>
+  </div>
+
+  <nav class="pager">
+    <span class="gap"></span>
+    <a class="next" href="01-marketplaces.html">01 · Marketplaces →</a>
+  </nav>
+</main>
+<script>
+const NODES = ["USER","MODEL","TOOL","MODEL","USER"];
+const STEPS = [
+  {at:0,msg:'USER → MODEL: "What changed in the repo this week?"'},
+  {at:1,msg:'MODEL thinks: I can\'t see the repo. It emits a tool call: run_command("git log --since=1.week")'},
+  {at:2,msg:'HARNESS executes the command (the model never runs anything itself) and captures the output.'},
+  {at:3,msg:'TOOL RESULT → MODEL: the git log text enters the context window like any other tokens.'},
+  {at:4,msg:'MODEL → USER: "Three commits this week: …" — plain next-token prediction over prompt + result.'},
+];
+let i = 0;
+const bx = document.getElementById("loop-boxes"), msg = document.getElementById("loop-msg"),
+      btn = document.getElementById("loop-btn"), ft = document.getElementById("fig-ft");
+function draw(){
+  bx.innerHTML = NODES.map((n,j) =>
+    `<span style="padding:10px 14px;border:1px solid ${j===STEPS[i].at?'#00c7fd':'#263039'};
+      color:${j===STEPS[i].at?'#00c7fd':'#4a4f55'}">${n}</span>` +
+    (j<NODES.length-1?`<span style="align-self:center;color:#4a4f55">→</span>`:"")).join("");
+  msg.textContent = STEPS[i].msg;
+  ft.textContent = `HOP ${i+1}/${STEPS.length} — THE LOOP IS THE AGENT`;
+}
+btn.addEventListener("click", () => { i = (i+1) % STEPS.length; draw(); });
+draw();
+</script>
+</body>
+</html>
