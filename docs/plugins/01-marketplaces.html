@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Plugin Marketplaces — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">A1 Index</a>
+    <a href="00-primer.html">00</a>
+    <a href="01-marketplaces.html" class="on">01</a>
+    <a href="02-plugins.html">02</a>
+    <a href="03-mcp-servers.html">03</a>
+    <a href="04-skills.html">04</a>
+    <a href="05-agents.html">05</a>
+    <a href="06-hooks-and-commands.html">06</a>
+    <a href="07-building-a-plugin.html">07</a>
+    <a href="08-claude-copilot-compat.html">08</a>
+    <a href="09-which-one-when.html">09</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module A1 / Concept 01</span>
+    <h1>Plugin <span class="hl">Marketplaces</span></h1>
+    <p class="sub">A marketplace is just a catalog your AI harness can install from — a JSON file pointing at git repos. Understanding that demystifies the whole ecosystem.</p>
+    <div class="meta"><span>Read <b>7 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Concept 00</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> MARKETPLACE ANATOMY / INTERACTIVE</span><span>HOVER A PART</span></div>
+    <div class="panel-body" id="fig">
+      <div id="mk" style="border:1px solid #263039;padding:14px;font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;">
+        <div class="mk-part" data-d="THE MARKETPLACE: A GIT REPO OR URL THE HARNESS CAN READ" style="color:#848a91;padding:4px;">▚ MARKETPLACE (GIT REPO)</div>
+        <div class="mk-part" data-d="THE CATALOG FILE: LISTS EVERY PLUGIN, ITS SOURCE AND DESCRIPTION" style="border:1px solid #263039;margin:8px 0;padding:8px;color:#848a91;">.claude-plugin/marketplace.json</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div class="mk-part" data-d="A PLUGIN ENTRY: NAME + WHERE ITS SOURCE LIVES (ANY GIT REPO)" style="border:1px solid #263039;padding:8px;flex:1;min-width:140px;color:#848a91;">PLUGIN: deploy-helper</div>
+          <div class="mk-part" data-d="ENTRIES CAN POINT AT DIFFERENT REPOS — THE MARKETPLACE HOSTS NOTHING" style="border:1px solid #263039;padding:8px;flex:1;min-width:140px;color:#848a91;">PLUGIN: code-reviewer</div>
+          <div class="mk-part" data-d="DESCRIPTION IS WHAT USERS (AND MODELS) SEE BEFORE INSTALLING" style="border:1px solid #263039;padding:8px;flex:1;min-width:140px;color:#848a91;">PLUGIN: db-tools</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel-ft" id="fig-ft">HOVER A PART TO SEE ITS ROLE</div>
+    <div class="figure-note">Field names simplified; see the marketplace.json reference for the full schema.</div>
+  </div>
+
+  <div class="prose">
+    <h2>Why extend the harness</h2>
+    <p>Concept 00 framed a plugin as a change to the harness, not the model. The lazy alternative to a plugin is repeated prompting — pasting the same instructions into every session — and that's copy-paste engineering: it doesn't version, doesn't share, and doesn't get reviewed. Packaging those instructions, tools, and hooks turns them into an artifact with a name and a source someone else can read before running. A marketplace is how that artifact gets found.</p>
+
+    <h2>A catalog, not a store</h2>
+    <p>A marketplace is a git repository, URL, or local path containing a <code>.claude-plugin/marketplace.json</code> file that lists plugins and where to find them — it provides "centralized discovery, version tracking, automatic updates, and support for multiple source types." Each plugin entry needs a <code>name</code> and a <code>source</code>; that source can be a relative path, a <code>github</code> repo, a <code>url</code>, a <code>git-subdir</code>, or an <code>npm</code> package. The marketplace itself hosts none of it — it's a pointer, and the plugin's actual code can live in a completely different repository owned by someone else entirely.</p>
+
+    <h2>Install flow</h2>
+    <p>Two steps, matching that catalog/content split. Register a catalog with <code>/plugin marketplace add &lt;source&gt;</code> — that does nothing but make the list of plugins visible. Then install a specific plugin out of it with <code>/plugin install &lt;plugin-name&gt;@&lt;marketplace-name&gt;</code>. Installed plugins get copied to a local cache and can be toggled on and off, which matters because every enabled plugin's tool descriptions sit in the context window on every turn — the same context-budget point Concept 00 made about tools in general.</p>
+
+    <h2>Trust: you are running their code</h2>
+    <p>A marketplace listing doesn't mean the plugin was vetted — it means a pointer got added to a catalog. Installing a plugin puts someone else's instructions, and in the case of hooks or MCP servers someone else's executable code, inside your session with your access. VS Code makes this explicit with a trust dialog the first time you install a third-party publisher's extension; Claude Code's equivalent discipline is manual: review the source, pin a <code>ref</code> or <code>sha</code> instead of tracking a moving branch, and treat a new plugin the way you'd treat a new dependency.</p>
+
+    <h2>Pro vs. amateur</h2>
+    <p>Amateurs treat a marketplace as a store that hosts and vets plugins. Pros know it's metadata pointing at git — the source can live anywhere git reaches, and being listed implies nothing about review or safety. Amateurs install and forget; pros pin and review versions like any dependency, since omitting a version pin means every new commit becomes a new version silently. And amateurs judge a plugin by which marketplace it's in — official, community, or otherwise; pros know the marketplace a plugin ships in says nothing about its quality, and read the source. Private and team marketplaces, not the public ones, are where most real deployment happens: the same source types work against a private repo with token-based auth, pointed only at your own team.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://code.claude.com/docs/en/plugin-marketplaces"><span class="src">Docs · Claude Code</span><span class="t">Create and Distribute a Plugin Marketplace</span></a>
+    <a class="ref" href="https://code.claude.com/docs/en/plugins"><span class="src">Docs · Claude Code</span><span class="t">Create Plugins</span></a>
+    <a class="ref" href="https://claude.com/blog/claude-code-plugins"><span class="src">Blog · Claude</span><span class="t">Claude Code Plugins</span></a>
+    <a class="ref" href="https://code.visualstudio.com/docs/editor/extension-marketplace"><span class="src">Docs · VS Code</span><span class="t">Extension Marketplace</span></a>
+    <a class="ref" href="https://docs.github.com/en/copilot/building-copilot-extensions/about-building-copilot-extensions"><span class="src">Docs · GitHub</span><span class="t">About building Copilot extensions</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="00-primer.html">← 00 · The 15-Minute Primer</a>
+    <a class="next" href="02-plugins.html">02 · Plugins →</a>
+  </nav>
+</main>
+<script>
+const ft1 = document.getElementById("fig-ft");
+document.querySelectorAll(".mk-part").forEach(el => {
+  el.addEventListener("mouseenter", () => { el.style.borderColor = "#00c7fd"; el.style.color = "#00c7fd"; ft1.textContent = el.dataset.d; });
+  el.addEventListener("mouseleave", () => { el.style.borderColor = "#263039"; el.style.color = "#848a91"; ft1.textContent = "HOVER A PART TO SEE ITS ROLE"; });
+});
+ft1.textContent = "HOVER A PART TO SEE ITS ROLE";
+</script>
+</body>
+</html>
