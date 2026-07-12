@@ -31,7 +31,7 @@ Each folder maps to one component type, and the mapping is direct enough to read
 
 The one hard rule about this layout: "Don't put `commands/`, `agents/`, `skills/`, or `hooks/` inside the `.claude-plugin/` directory. Only `plugin.json` goes inside `.claude-plugin/`. All other directories must be at the plugin root level" [S1]. The manifest folder is reserved for the manifest; everything else sits as a sibling to it, not a child.
 
-None of the folders are mandatory beyond the manifest itself being optional too — the reference doc treats every directory in the standard layout as present because a given plugin uses that component, not because the layout demands it. A plugin that ships one skill and nothing else is still a complete plugin.
+The manifest folder itself is optional too, not just what's inside it — `.claude-plugin/` is unnecessary "if components use default locations" [S2]. By that same logic, nothing else in the standard layout is mandatory either: a plugin only needs the folders for the components it actually uses. A plugin that ships one skill and nothing else is still a complete plugin.
 
 ## The manifest
 
@@ -49,7 +49,7 @@ For local development, the harness supports loading a plugin directly from a pat
 
 ## Enable, disable, scope
 
-Installed plugins can be toggled without uninstalling them, and where that toggle lives depends on scope. The reference doc lists four: `user` scope writes to `~/.claude/settings.json` and is personal, applying across all projects, and is the default; `project` scope writes to `.claude/settings.json`, checked into version control so a team shares the same plugin set; `local` scope writes to `.claude/settings.local.json`, project-specific and gitignored; `managed` scope is read-only, update-only, for centrally administered plugins [S2]. The system supports "toggling plugins on/off to reduce system prompt context when features aren't needed" [S3] — every enabled plugin's tool descriptions and skill metadata sit in the context window on every turn, the same budget concept 00 raised for tools generally, so disabling a plugin you're not using in a given session is a direct context-cost saving, not just tidiness.
+Installed plugins can be toggled without uninstalling them, and where that toggle lives depends on scope. The reference doc lists four: `user` scope writes to `~/.claude/settings.json` and is personal, applying across all projects, and is the default; `project` scope writes to `.claude/settings.json`, checked into version control so a team shares the same plugin set; `local` scope writes to `.claude/settings.local.json`, project-specific and gitignored; `managed` scope is read-only, update-only, for centrally administered plugins [S2]. Enabled plugins add to system-prompt context, which is why the system supports "toggling plugins on/off to reduce system prompt context when features aren't needed" [S3] — the same budget concept 00 raised for tools generally, so disabling a plugin you're not using in a given session is a direct context-cost saving, not just tidiness.
 
 ## Versioning and updates
 
@@ -57,7 +57,7 @@ Marketplace-installed plugins are copied into a local cache at `~/.claude/plugin
 
 ## Pro vs. amateur
 
-**Amateurs build a kitchen-sink plugin. Pros ship one good skill.** Every enabled plugin's tool descriptions and skill metadata occupy the context window on every turn [S3] — a plugin bundling ten mediocre skills costs an installer that budget for all ten, always, whether or not any get used. A single well-scoped skill that solves one problem well is a smaller, more valuable ask of someone else's context window than a bundle of half-finished ones.
+**Amateurs build a kitchen-sink plugin. Pros ship one good skill.** Enabled plugins add to system-prompt context, which is exactly why the system supports toggling them off when unneeded [S3] — a plugin bundling ten mediocre skills costs an installer that budget for all ten, always, whether or not any get used. A single well-scoped skill that solves one problem well is a smaller, more valuable ask of someone else's context window than a bundle of half-finished ones.
 
 **Amateurs pick generic component names. Pros name for discoverability inside the namespace.** Every plugin component is automatically namespaced as `plugin-name:component-name` [S1], so a skill literally cannot collide with another plugin's skill of the same short name — but a badly chosen `name` field in `plugin.json` still makes every component under it awkward to reference and hard to find in a crowded plugin list. The namespace is free collision protection; a clear plugin name is what makes that protection legible to a human choosing what to install.
 
