@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Plugins: The Container — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">A1 Index</a>
+    <a href="00-primer.html">00</a>
+    <a href="01-marketplaces.html">01</a>
+    <a href="02-plugins.html" class="on">02</a>
+    <a href="03-mcp-servers.html">03</a>
+    <a href="04-skills.html">04</a>
+    <a href="05-agents.html">05</a>
+    <a href="06-hooks-and-commands.html">06</a>
+    <a href="07-building-a-plugin.html">07</a>
+    <a href="08-claude-copilot-compat.html">08</a>
+    <a href="09-which-one-when.html">09</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module A1 / Concept 02</span>
+    <h1>Plugins: The <span class="hl">Container</span></h1>
+    <p class="sub">A plugin is a directory with a manifest. Everything installable — skills, agents, hooks, MCP servers, commands — ships inside one. Learn the layout once and every plugin you open makes sense.</p>
+    <div class="meta"><span>Read <b>8 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Concept 01</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> PLUGIN ANATOMY / INTERACTIVE</span><span>CLICK A FILE</span></div>
+    <div class="panel-body" id="fig">
+      <ul id="tree" style="list-style:none;padding-left:0;font-family:var(--mono);font-size:.82rem;line-height:2;color:#848a91;">
+        <li data-d="THE MANIFEST: NAME, VERSION, DESCRIPTION — WHAT THE MARKETPLACE READS" style="cursor:pointer">▸ .claude-plugin/plugin.json</li>
+        <li data-d="EACH SUBFOLDER IS ONE SKILL: A SKILL.MD PLUS OPTIONAL SUPPORT FILES" style="cursor:pointer">▸ skills/review-pr/SKILL.md</li>
+        <li data-d="EACH FILE IS ONE SUBAGENT: FRONTMATTER (TOOLS, MODEL) + SYSTEM PROMPT" style="cursor:pointer">▸ agents/security-auditor.md</li>
+        <li data-d="EVENT HANDLERS: SHELL COMMANDS THE HARNESS RUNS ON EVENTS LIKE PRETOOLUSE" style="cursor:pointer">▸ hooks/hooks.json</li>
+        <li data-d="SLASH COMMANDS: USER-INVOKED PROMPT TEMPLATES" style="cursor:pointer">▸ commands/deploy.md</li>
+        <li data-d="MCP SERVERS THE PLUGIN STARTS: EXTERNAL TOOLS THE MODEL CAN CALL" style="cursor:pointer">▸ .mcp.json</li>
+      </ul>
+    </div>
+    <div class="panel-ft" id="fig-ft">CLICK A FILE TO SEE WHAT IT DOES</div>
+    <div class="figure-note">Every directory is optional — a plugin can be a single skill in a manifest.</div>
+  </div>
+
+  <div class="prose">
+    <h2>// One unit, many components</h2>
+    <p>Concept 01 covered the marketplace — the catalog that points at a plugin's source. This concept opens the thing being pointed at. A plugin is "a self-contained directory of components that extends Claude Code with custom functionality" — components include "skills, agents, hooks, MCP servers, LSP servers, and monitors." Whatever you'd otherwise paste into every session by hand — a tool connection, a specialized subagent, a hook, a shortcut command — goes in the container once, and the container installs as a unit. Components inside a plugin get namespaced (<code>/my-plugin:hello</code> instead of a bare <code>/hello</code>) so two plugins can each ship a skill with the same short name without colliding.</p>
+
+    <h2>// Anatomy on disk</h2>
+    <p>The layout mirrors the component list directly: <code>.claude-plugin/plugin.json</code> is the manifest; <code>skills/</code> holds skills as <code>&lt;name&gt;/SKILL.md</code> directories; <code>commands/</code> holds skills as flat markdown files; <code>agents/</code> holds custom agent definitions; <code>hooks/</code> holds <code>hooks.json</code>; and <code>.mcp.json</code> at plugin root holds MCP server configuration. One hard rule: "Don't put <code>commands/</code>, <code>agents/</code>, <code>skills/</code>, or <code>hooks/</code> inside the <code>.claude-plugin/</code> directory. Only <code>plugin.json</code> goes inside <code>.claude-plugin/</code>." Nothing is mandatory beyond that — a plugin can be a single skill and a manifest and still be complete.</p>
+
+    <h2>// The manifest</h2>
+    <p><code>plugin.json</code> is what a marketplace reads before installing anything. Only <code>name</code> is required — a unique identifier that doubles as the namespace prefix. Everything else is metadata: <code>description</code>, <code>version</code>, <code>author</code>. Skip <code>version</code> and the harness falls back silently to the git commit SHA as the version, so every commit becomes an un-communicated release. Component-path fields like <code>skills</code>, <code>commands</code>, and <code>agents</code> can override the default folders, but they don't all behave the same way — most replace the default scan, while <code>skills</code> is the exception and always adds to it.</p>
+
+    <h2>// Install lifecycle</h2>
+    <p>What loads and when splits along component lines. MCP servers "start automatically when plugin is enabled" — they're a running process. Skills and commands are "automatically discovered when plugin is installed", but a skill body only enters context when actually invoked. Hooks register their event matchers at load and fire later on the matching lifecycle event. For local development, <code>claude --plugin-dir ./my-plugin</code> loads a plugin from a path with no marketplace step, and <code>/reload-plugins</code> picks up edits without restarting.</p>
+
+    <h2>// Pro vs. amateur</h2>
+    <p><b>Amateurs build a kitchen-sink plugin. Pros ship one good skill.</b> Every enabled plugin's tool descriptions sit in context on every turn — ten mediocre skills cost that budget always, whether used or not. <b>Amateurs pick generic component names. Pros name for discoverability.</b> Namespacing (<code>plugin:skill</code>) already prevents collisions; a clear plugin name is what makes it findable in a crowded list. <b>Amateurs publish straight to a marketplace. Pros test locally first.</b> <code>--plugin-dir</code> plus <code>/reload-plugins</code> is the exact same load path without the shared-catalog risk. <b>Amateurs treat <code>plugin.json</code> as a formality. Pros treat it like <code>package.json</code>.</b> Semver and changelogs matter the moment teammates depend on a plugin — an unversioned manifest tracks a moving commit SHA instead of a deliberate release.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://code.claude.com/docs/en/plugins"><span class="src">Docs · Claude Code</span><span class="t">Plugins</span></a>
+    <a class="ref" href="https://code.claude.com/docs/en/plugins-reference"><span class="src">Docs · Claude Code</span><span class="t">Plugins reference</span></a>
+    <a class="ref" href="https://claude.com/blog/claude-code-plugins"><span class="src">Blog · Claude</span><span class="t">Claude Code Plugins</span></a>
+    <a class="ref" href="https://github.com/anthropics/claude-code"><span class="src">GitHub · Anthropic</span><span class="t">anthropics/claude-code</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="01-marketplaces.html">← 01 · Plugin Marketplaces</a>
+    <a class="next" href="03-mcp-servers.html">03 · MCP Servers →</a>
+  </nav>
+</main>
+<script>
+const ftT = document.getElementById("fig-ft");
+document.querySelectorAll("#tree li").forEach(li => li.addEventListener("click", () => {
+  document.querySelectorAll("#tree li").forEach(o => o.style.color = "#848a91");
+  li.style.color = "#00c7fd"; ftT.textContent = li.dataset.d;
+}));
+ftT.textContent = "CLICK A FILE TO SEE WHAT IT DOES";
+</script>
+</body>
+</html>
