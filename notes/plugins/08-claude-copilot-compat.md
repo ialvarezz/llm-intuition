@@ -52,7 +52,7 @@ Slash commands are closer to portable than hooks. Claude Code's `commands/*.md` 
 
 ## A portability strategy
 
-The pattern across every component above is the same: portability tracks how open the underlying spec is, not which vendor built the harness. MCP (an open protocol [03-S1]) and Agent Skills (an open standard [S6]) are fully or near-fully portable. AGENTS.md is portable by construction — it's a shared file both harnesses read [S1]. Agents are portable in concept but need a file-format translation. Hooks and vendor-specific slash-command extras are the least portable, because nothing standardizes them across vendors yet.
+The pattern across every component above is the same: portability tracks how open the underlying spec is, not which vendor built the harness. MCP (an open-source standard [03-S1]) and Agent Skills (an open standard [S6]) are fully or near-fully portable. AGENTS.md is portable by construction — it's a shared file both harnesses read [S1]. Agents are portable in concept but need a file-format translation. Hooks and vendor-specific slash-command extras are the least portable, because nothing standardizes them across vendors yet.
 
 The practical strategy: put as much of an integration's knowledge as possible into the portable layers — one MCP server, one AGENTS.md, skills written to the base Agent Skills spec — and keep the harness-specific layer (hooks, custom-agent frontmatter extras) as a thin wrapper on top. A team that does this can switch primary assistants, or run both side by side, with the wrapper being the only thing that needs rewriting.
 
