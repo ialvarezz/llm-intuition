@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · Hooks &amp; Commands — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">A1 Index</a>
+    <a href="00-primer.html">00</a>
+    <a href="01-marketplaces.html">01</a>
+    <a href="02-plugins.html">02</a>
+    <a href="03-mcp-servers.html">03</a>
+    <a href="04-skills.html">04</a>
+    <a href="05-agents.html">05</a>
+    <a href="06-hooks-and-commands.html" class="on">06</a>
+    <a href="07-building-a-plugin.html">07</a>
+    <a href="08-claude-copilot-compat.html">08</a>
+    <a href="09-which-one-when.html">09</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module A1 / Concept 06</span>
+    <h1>Hooks &amp; <span class="hl">Commands</span></h1>
+    <p class="sub">Prompting a model to "always do X" is a suggestion. A hook makes it a guarantee — deterministic code on the agent loop's lifecycle events.</p>
+    <div class="meta"><span>Read <b>10 min</b></span><span>Level <b>Deep dive</b></span><span>Prereq <b>Concept 05</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> HOOK EVENTS / INTERACTIVE</span><span>CLICK AN EVENT</span></div>
+    <div class="panel-body" id="fig">
+<div id="hk-line" style="display:flex;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;"></div>
+<div id="hk-detail" style="margin-top:16px;padding:14px;border:1px solid var(--line);font-size:.85rem;line-height:1.6;color:var(--fg);min-height:4em;"></div>
+    </div>
+    <div class="panel-ft" id="fig-ft">FIVE PLACES TO BOLT DETERMINISTIC CODE ONTO THE LOOP</div>
+    <div class="figure-note">Event names from Claude Code; other harnesses expose similar lifecycles.</div>
+  </div>
+
+  <div class="prose">
+    <h2>// Suggestions vs. guarantees</h2>
+    <p>Skills, MCP servers, and agent files all work the same way: put more information in front of the model and let it decide what to do with that information. A <b>hook</b> is different — it's deterministic code the harness itself runs at a fixed point in the agent loop, with no model judgment involved. Hooks can be shell commands, HTTP calls, MCP tool calls, or even single-turn or multi-turn LLM evaluations, but the common case is plain shell — because the whole point is removing judgment from the step, not adding another layer of it.</p>
+
+    <h2>// The event catalog</h2>
+    <p>Claude Code exposes a large, named catalog of lifecycle points — per-session events like <code>SessionStart</code> and <code>SessionEnd</code>, per-turn events like <code>UserPromptSubmit</code> and <code>Stop</code>, agentic-loop events like <code>PreToolUse</code> and <code>PostToolUse</code>, plus subagent, file, config, and compaction events. Each one fires at a documented, specific point: <code>PreToolUse</code> fires before a tool call executes, <code>PostToolUse</code> fires after it succeeds, <code>Stop</code> fires when the model finishes responding. That trigger point is what tells you whether a hook can still change the outcome — by the time <code>PostToolUse</code> runs, the tool has already executed.</p>
+
+    <h2>// Block, allow, inject</h2>
+    <p>Not every event can do the same things. Every event can <i>inspect</i> — read JSON describing what's happening. A subset can <i>block</i> — <code>PreToolUse</code>, <code>UserPromptSubmit</code>, and <code>Stop</code> among them — by exiting 2 or returning a JSON decision field. A different subset can <i>inject context</i> back into the conversation, and <code>PreToolUse</code> alone can <i>rewrite</i> the tool call's input before it runs. The contract is exit-code based: exit 0 means no objection and flow continues normally; exit 2 blocks the action and shows the hook's stderr to the model as feedback. Anything else lets the action proceed but surfaces an error notice. On top of the exit code, a hook can print structured JSON with a <code>permissionDecision</code> of <code>allow</code>, <code>deny</code>, <code>ask</code>, or <code>defer</code> for finer control than a bare exit code gives you.</p>
+    <p>Classic uses fall straight out of that contract: run the formatter after every edit is a <code>PostToolUse</code> hook; block writes to a protected path is a <code>PreToolUse</code> hook that inspects the tool input and denies the match; lint before commit is the same shape wired to a different matcher. Limits worth knowing: hooks can't trigger slash commands or other tool calls directly, a <code>PostToolUse</code> hook can't undo a tool that already ran, and if several <code>PreToolUse</code> hooks all try to rewrite the same input, only the last one to finish wins — non-deterministically.</p>
+
+    <h2>// Slash commands</h2>
+    <p>A slash command is invoked by the user, not the model — you type <code>/name</code> and the harness expands it into a prompt. In Claude Code today this has merged into skills: a skill file (<code>SKILL.md</code>) and the legacy <code>.claude/commands/*.md</code> form both create the same <code>/name</code> invocation and work identically. The old dedicated "slash commands" docs page now redirects to the skills docs — the mechanism didn't disappear, it got folded into the broader skill spec, which still documents the legacy <code>commands/</code> form alongside it. A skill body supports argument interpolation for whatever text follows the command name — the full argument string, a specific positional argument, or a named argument declared in frontmatter.</p>
+    <p>The real distinction isn't "commands vs. skills" as two systems — it's <b>user pulls vs. model decides</b>, both routed through the same file. Frontmatter controls which side is on: <code>disable-model-invocation: true</code> means only you can invoke it, no auto-triggering; <code>user-invocable: false</code> means only the model can invoke it, hidden from the <code>/</code> menu. Left at defaults, a skill does both — you can type <code>/name</code>, and the model can auto-invoke it when the description matches the conversation.</p>
+
+    <h2>// Pro vs. amateur</h2>
+    <p>"Please always run the tests" in a prompt is a wish — it's read by the model and weighed against everything else competing for its attention that turn. A <code>PostToolUse</code> or <code>Stop</code> hook is a law: it runs every time, unconditionally, whether or not the model was thinking about it. Hooks also run with your own shell's permissions, which cuts both ways — that's what makes a formatter hook trivial to write and what makes an unaudited plugin hook dangerous; review a plugin's bundled hooks before installing it, the same way you'd review any script with your access. Keep hooks fast, too — they're synchronous with the loop, and a slow <code>PreToolUse</code> hook blocks the tool call it's guarding rather than running in the background. And reach for a hook only when the rule is mechanical — "run the formatter," "reject edits to a protected path" — not when it needs judgment; judgment calls are what skills are for.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://code.claude.com/docs/en/hooks"><span class="src">Docs · Claude Code</span><span class="t">Hooks reference</span></a>
+    <a class="ref" href="https://code.claude.com/docs/en/hooks-guide"><span class="src">Docs · Claude Code</span><span class="t">Hooks guide</span></a>
+    <a class="ref" href="https://code.claude.com/docs/en/slash-commands"><span class="src">Docs · Claude Code</span><span class="t">Slash commands</span></a>
+    <a class="ref" href="https://code.visualstudio.com/docs/copilot/copilot-customization"><span class="src">Docs · VS Code</span><span class="t">Copilot customization</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="05-agents.html">← 05 · Agents &amp; Subagents</a>
+    <a class="next" href="07-building-a-plugin.html">07 · Building a Plugin →</a>
+  </nav>
+</main>
+<script>
+const EV = [
+  {n:"SessionStart", d:"Fires once when a session opens. Example: inject the current sprint's ticket list into context.", block:false},
+  {n:"UserPromptSubmit", d:"Fires on every user message, before the model sees it. Example: append a reminder of repo conventions.", block:true},
+  {n:"PreToolUse", d:"Fires before a tool runs — and can BLOCK it. Example: reject any Edit touching infra/prod/.", block:true},
+  {n:"PostToolUse", d:"Fires after a tool succeeds. Example: run the formatter after every file edit. Deterministic — no model judgment.", block:false},
+  {n:"Stop", d:"Fires when the agent believes it's done. Example: run the test suite; on failure, tell it to keep working.", block:true},
+];
+const line = document.getElementById("hk-line"), det = document.getElementById("hk-detail"), ftH = document.getElementById("fig-ft");
+line.innerHTML = EV.map((e,i) =>
+  `<span data-i="${i}" style="cursor:pointer;padding:8px 12px;border:1px solid #263039;color:#848a91;">${e.n}</span>` +
+  (i<EV.length-1?`<span style="align-self:center;color:#4a4f55">→</span>`:"")).join("");
+line.querySelectorAll("[data-i]").forEach(ch => ch.addEventListener("click", () => {
+  line.querySelectorAll("[data-i]").forEach(o => { o.style.borderColor="#263039"; o.style.color="#848a91"; });
+  ch.style.borderColor = "#00c7fd"; ch.style.color = "#00c7fd";
+  const e = EV[+ch.dataset.i]; det.textContent = e.d;
+  ftH.textContent = e.block ? "THIS EVENT CAN BLOCK THE ACTION" : "THIS EVENT OBSERVES AND REACTS — IT CANNOT BLOCK";
+}));
+det.textContent = "Click an event to see what a hook can do there.";
+ftH.textContent = "FIVE PLACES TO BOLT DETERMINISTIC CODE ONTO THE LOOP";
+</script>
+</body>
+</html>
