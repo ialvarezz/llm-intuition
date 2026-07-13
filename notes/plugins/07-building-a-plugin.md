@@ -79,7 +79,7 @@ dependencies, match the existing test framework already in the repo,
 and do not modify the file under test.
 ```
 
-The `tools` field lists which tools the subagent may use; anything not listed simply isn't available to it, regardless of what the body's instructions say [S2] — restricting it to `Read, Write, Bash` means `test-writer` cannot touch source files outside the one it was dispatched to cover.
+The `tools` field lists which tools the subagent may use; anything not listed simply isn't available to it, regardless of what the body's instructions say, as covered in Concept 05 — restricting it to `Read, Write, Bash` means `test-writer` cannot touch source files outside the one it was dispatched to cover.
 
 MCP servers can be bundled into a plugin too — a `.mcp.json` at the plugin root, or an inline `mcpServers` field in `plugin.json` [S2] — but pr-buddy doesn't need one; see Concept 03 for how MCP fits into a plugin.
 
@@ -109,7 +109,7 @@ $ claude --plugin-dir ./pr-buddy
 
 The negative case matters as much as the positive ones — a skill whose description is broad enough to fire on *fix this typo* is a skill that's going to hijack unrelated conversations the moment it ships, not a hypothetical risk.
 
-`claude plugin validate` checks `plugin.json` and component syntax before anything gets pushed [S1] [S2].
+`claude plugin validate` checks `plugin.json` and component syntax [S1] [S2] — the check to run before anything gets pushed.
 
 ### Publish
 
@@ -161,7 +161,7 @@ The bump itself follows semantic versioning: "bump MAJOR for breaking changes, M
 
 ## Pro vs. amateur
 
-**Amateurs skip `version` until it's a published plugin. Pros set it from day one.** Once other people install pr-buddy, an unversioned plugin means the commit SHA is doing the versioning for them, silently, on every push — a teammate's session can pick up a half-finished commit mid-edit and break without warning. Pinning `version` and bumping it deliberately means updates only land when the author decides they're ready.
+**Amateurs skip `version` until it's a published plugin. Pros set it from day one.** Once other people install pr-buddy, an unversioned plugin means the commit SHA is doing the versioning for them, silently, on every push — a teammate's session can pick up a half-finished commit mid-edit and break without warning. Pinning `version` and bumping it deliberately means updates only land when the author decides they're ready. The same discipline extends to a changelog: "Document changes in a `CHANGELOG.md`" [S4] is part of the same best-practice bump-semver guidance, so pr-buddy's version bumps are traceable to what actually changed, not just a bare number.
 
 **Amateurs test in the session where they wrote the plugin. Pros test in a fresh one.** The dev session already discussed `review-pr` at length by the time the plugin is written, so of course the model recognizes *review this PR* — that conversation has contaminated context the skill's description alone won't have for a real user. The three-check local test above — trigger, dispatch, negative case — only means something run from a clean `claude --plugin-dir ./pr-buddy` session that never saw the plugin's own design discussion.
 
