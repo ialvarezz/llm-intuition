@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 · Which One, When — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">A1 Index</a>
+    <a href="00-primer.html">00</a>
+    <a href="01-marketplaces.html">01</a>
+    <a href="02-plugins.html">02</a>
+    <a href="03-mcp-servers.html">03</a>
+    <a href="04-skills.html">04</a>
+    <a href="05-agents.html">05</a>
+    <a href="06-hooks-and-commands.html">06</a>
+    <a href="07-building-a-plugin.html">07</a>
+    <a href="08-claude-copilot-compat.html">08</a>
+    <a href="09-which-one-when.html" class="on">09</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module A1 / Concept 09</span>
+    <h1>Which One, <span class="hl">When</span></h1>
+    <p class="sub">Skill, MCP server, agent, hook, command, or just a prompt? Start from the failure mode you're fixing — the right artifact falls out.</p>
+    <div class="meta"><span>Read <b>8 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Concept 08</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> DECISION WALKER / INTERACTIVE</span><span>ANSWER THE QUESTIONS</span></div>
+    <div class="panel-body" id="fig">
+      <div id="dw-q" style="padding:14px;border:1px solid var(--line);font-size:.95rem;line-height:1.6;color:var(--fg);min-height:3.5em;"></div>
+      <div id="dw-btns" style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;"></div>
+    </div>
+    <div class="panel-ft" id="fig-ft">START FROM THE FAILURE MODE, NOT THE TECHNOLOGY</div>
+    <div class="figure-note">A heuristic, not a law — real plugins usually combine two or three artifacts.</div>
+  </div>
+
+  <div class="prose">
+    <h2>Start from the failure mode</h2>
+    <p>Every artifact in this module fixes exactly one kind of failure, and the failure names the fix. <b>"The model doesn't know how we do X"</b> is a knowledge gap: create a skill "when you keep pasting the same instructions, checklist, or multi-step procedure into chat, or when a section of CLAUDE.md has grown into a procedure rather than a fact" [S1] — concept 04 covers writing one. <b>"The model can't reach system X"</b> is a capability gap, not a knowledge gap: no amount of instruction fixes a model with no path to a filesystem, API, or database; that's what tool use and, at scale, MCP servers exist to close (concept 03). <b>"This sub-task pollutes/overflows the main context or needs different tools"</b> is a context-management problem: Claude Code's <code>context: fork</code> mode is explicit that "The skill content becomes the prompt that drives the subagent. It won't have access to your conversation history." [S1], and long-horizon guidance names <b>sub-agent architectures</b> (delegated exploration returning condensed summaries) as a standard way to keep a large task's context tight [S4] — concept 05 covers the dispatch contract. <b>"This rule must hold every time, no exceptions"</b> is a reliability problem a skill can't solve, because the model can still choose to skip it: hooks "are user-defined shell commands that execute at specific points in Claude Code's lifecycle. They provide <b>deterministic control</b> over Claude Code's behavior, ensuring certain actions always happen rather than relying on the LLM to choose to run them" [S2] — concept 06 covers the event catalog. <b>"I keep typing the same request"</b> is a repetition problem: a slash command, also concept 06. <b>"It's a one-off"</b> doesn't earn an artifact at all — a plain prompt is cheapest for a task that won't recur.</p>
+
+    <h2>The cost column</h2>
+    <p>Each artifact sits at a different point on a cost curve, and the curve is why escalation order matters. A skill is markdown: "a skill's body loads only when it's used, so long reference material costs almost nothing until you need it" [S1] — the cheapest artifact that adds judgment. An MCP server is running software: a live dependency to install, authenticate, version, and patch (concept 03). An agent dispatch costs latency and tokens per call — "Agentic systems often trade latency and cost for better task performance, and you should consider when this tradeoff makes sense" [S3], and "the autonomous nature of agents means higher costs, and the potential for compounding errors" [S3]. A hook is a shell script on the hot path, running at "specific points in Claude Code's lifecycle" on every matching event [S2] — cheap per call, but now part of the critical path, and a broken hook can block work outright rather than just answer wrong.</p>
+    <p>A plugin usually isn't one artifact from this list — it's a bundle. A real plugin might ship a skill that teaches the procedure, a hook that guarantees a linter runs before every commit regardless of whether the model remembers, and a command that gives a human a fast manual trigger. The framework above answers "which artifact for which failure," not "which single artifact for this plugin" — most plugins answer several of the six questions at once, one artifact per failure mode they cover.</p>
+    <p>Every artifact installed is also something somebody now owns. Descriptions drift — the goal is "the _smallest_ _possible_ set of high-signal tokens that maximize the likelihood of some desired outcome" [S4], and a stale description misleads the model about when to invoke the thing, it doesn't just waste tokens. Docs-linked instructions rot the moment the thing they reference moves, with no error to signal it. And someone must own each artifact — hook, skill, or MCP server is infrastructure with the same lifecycle as code: a person has to notice when it breaks, update it, or retire it.</p>
+
+    <h2>Escalate on evidence</h2>
+    <p>Pros pick the cheapest artifact that fixes the failure mode, and escalate only on evidence: prompt → command → skill → agent/MCP. Each step up is only justified once the cheaper step has been tried and demonstrably fails — "you should consider adding complexity _only_ when it demonstrably improves outcomes" [S3]. They also measure the context cost of what they install: every tool description, injected instruction, and retrieved snippet sits in the same bounded context window and gets billed as input tokens whether the model uses it or not — the discipline is keeping that budget "informative, yet tight" [S4].</p>
+
+    <h2>Pro vs. amateur</h2>
+    <p>Amateurs pick the shiniest tool — an MCP server where a 30-line skill would do, running software with its dependencies, auth, and upkeep, to solve a problem markdown and a description would have solved cheaper. Pros pick the cheapest artifact that fixes the failure mode and escalate only on evidence. And pros delete plugins that stopped earning their tokens: an artifact that made sense when installed can stop paying for itself, and it keeps costing context and maintenance attention regardless — the same principle that justifies adding an artifact justifies cutting the ones that no longer earn their place.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://code.claude.com/docs/en/skills"><span class="src">Docs · Claude</span><span class="t">Extend Claude with skills</span></a>
+    <a class="ref" href="https://code.claude.com/docs/en/hooks-guide"><span class="src">Docs · Claude</span><span class="t">Automate actions with hooks</span></a>
+    <a class="ref" href="https://www.anthropic.com/research/building-effective-agents"><span class="src">Post · Anthropic</span><span class="t">Building Effective Agents</span></a>
+    <a class="ref" href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"><span class="src">Post · Anthropic</span><span class="t">Effective context engineering for AI agents</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="08-claude-copilot-compat.html">← 08 · Claude ↔ Copilot Compatibility</a>
+    <a class="next" href="deck.html">Deck · The presentation →</a>
+  </nav>
+</main>
+<script>
+const TREE = {
+  start:{q:"What's failing?",a:[["Model lacks our know-how","knw"],["Model can't reach a system","mcp"],["A rule keeps getting skipped","hook"],["Main context gets polluted","agent"]]},
+  knw:{q:"Is it needed on most tasks, or only for specific ones?",a:[["Most tasks","res_inst"],["Specific tasks","res_skill"]]},
+  mcp:{q:"Does an existing MCP server cover it?",a:[["Yes","res_use"],["No","res_mcp"]]},
+  hook:{q:"Is the rule mechanical (no judgment needed)?",a:[["Yes","res_hook"],["Needs judgment","res_skill"]]},
+  agent:{q:"Does the sub-task need the conversation's context?",a:[["No — self-contained","res_agent"],["Yes","res_inline"]]},
+  res_inst:{r:"PROJECT INSTRUCTIONS (CLAUDE.md / AGENTS.md) — always-loaded, keep it short."},
+  res_skill:{r:"A SKILL — markdown, loads on demand, cheapest artifact that adds judgment."},
+  res_use:{r:"USE THE EXISTING MCP SERVER — never build what you can install."},
+  res_mcp:{r:"BUILD AN MCP SERVER — it's running software: budget for deps, auth, upkeep."},
+  res_hook:{r:"A HOOK — deterministic, can block. Prompts suggest; hooks guarantee."},
+  res_agent:{r:"A SUBAGENT — fresh context, restricted tools, one-message return."},
+  res_inline:{r:"STAY INLINE — a dispatch that needs the whole conversation is cheaper done in place."},
+};
+const qEl = document.getElementById("dw-q"), bEl = document.getElementById("dw-btns"), ftD = document.getElementById("fig-ft");
+function go(k){
+  const n = TREE[k];
+  if (n.r){ qEl.innerHTML = `<b style="color:#00c7fd">${n.r}</b>`;
+    bEl.innerHTML = `<button class="btn" data-k="start">Start over</button>`;
+    ftD.textContent = "RECOMMENDATION — ESCALATE ONLY ON EVIDENCE";
+  } else { qEl.textContent = n.q;
+    bEl.innerHTML = n.a.map(([t,k2]) => `<button class="btn" data-k="${k2}">${t}</button>`).join("");
+    ftD.textContent = "START FROM THE FAILURE MODE, NOT THE TECHNOLOGY";
+  }
+  bEl.querySelectorAll("[data-k]").forEach(b => b.addEventListener("click", () => go(b.dataset.k)));
+}
+go("start");
+</script>
+</body>
+</html>
