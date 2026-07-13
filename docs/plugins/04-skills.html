@@ -50,22 +50,22 @@
   </div>
 
   <div class="prose">
-    <h2>// A folder with instructions</h2>
+    <h2>A folder with instructions</h2>
     <p>A skill is a directory with one required file, <code>SKILL.md</code>. It is not code the harness runs on your behalf — it's prose the model reads. An MCP server (Concept 03) exposes callable functions with typed schemas the harness invokes; a skill exposes a piece of text that becomes part of the model's own context, and the model reasons over it like any other instruction. The minimum legal skill is two YAML fields — <code>name</code> and <code>description</code> — plus a body. Everything else, from bundled scripts to elaborate reference directories, is optional scaffolding on top of that.</p>
 
-    <h2>// Progressive disclosure</h2>
+    <h2>Progressive disclosure</h2>
     <p>Progressive disclosure is why a project can carry dozens of installed skills without any of them costing meaningful context until one is actually relevant. It works in three levels. At session start, only each skill's <b>name</b> and <b>description</b> load — on the order of a hundred tokens per skill. When the model decides a skill is relevant, the full <b>body</b> loads, capped in practice under five thousand tokens. Support files referenced from the body — templates, datasets, scripts — load only when the body itself points at them, and cost effectively nothing until then because they're read from the filesystem, not carried in context by default. The figure above simulates exactly this: watch how little "session start" costs against how much "naive: load everything" costs for the same three skills.</p>
 
-    <h2>// The description is the API</h2>
+    <h2>The description is the API</h2>
     <p>The model decides whether to load a skill's body from the description alone, before reading a line of the body. If the description doesn't communicate the trigger conditions precisely, the body never gets read — no matter how good it is. Write the description like a function signature for a caller who only sees the signature: trigger phrases, symptoms, "use when…" — not marketing copy. A description that only names the domain tells the model what a skill is about but not when, mid-conversation, to reach for it.</p>
 
-    <h2>// Writing the body</h2>
+    <h2>Writing the body</h2>
     <p>Once triggered, the body enters the conversation as a single message and stays for the rest of the session — a one-way door, so it should earn the tokens it spends. Imperative voice, checklists, exact commands beat prose the model has to re-derive intent from. Keep the body itself short and move detailed reference material — the part only needed on rare edge cases — into separate files the body points at, so that material only loads on the sessions that actually need it. Skills can also bundle runnable scripts for the parts better handled by deterministic code than token generation; a script's source never enters context, only its output does when it runs.</p>
 
-    <h2>// Testing and failure modes</h2>
+    <h2>Testing and failure modes</h2>
     <p>A skill is prompt engineering, and it fails the way prompt engineering fails. A vague description never triggers. An over-broad one triggers everywhere, hijacking requests it was never meant for. A giant body bloats context for the rest of the session. Instructions that contradict CLAUDE.md leave the model resolving a contradiction mid-task. The fix is to test like software: run realistic prompts in a fresh session with the skill available and again with it disabled, and — the step amateurs skip — run near-miss prompts too, to confirm the skill stays silent on requests that only sound adjacent to its domain.</p>
 
-    <h2>// Pro vs. amateur</h2>
+    <h2>Pro vs. amateur</h2>
     <p>Amateurs write skills like READMEs for a human skimming a folder. Pros write them as behavioral specs for a model deciding in one glance, at a hard character ceiling, with no chance to ask a clarifying question first. Amateurs polish the body and leave the description generic; pros know description quality dominates body quality, because a brilliant body that never triggers delivers nothing. Amateurs write a skill once and forget it; pros treat it as prompt engineering under version control, reviewed like any other code change, because its failure modes — mis-triggering, contradicting other instructions, silently bloating context — are real bugs. And amateurs stop testing once a skill fires on the prompts it's meant for; pros test the negative case, because an over-broad description passes every positive test while actively hijacking conversations it shouldn't touch.</p>
   </div>
 

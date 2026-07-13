@@ -45,13 +45,13 @@
   </div>
 
   <div class="prose">
-    <h2>// The N×M problem</h2>
+    <h2>The N×M problem</h2>
     <p>Every AI assistant that wants to reach an external tool used to need its own bespoke integration — a Claude adapter for GitHub, a different Copilot adapter for GitHub, another for Slack, another again. Wire up N assistants against M tools by hand and you're maintaining N×M brittle, one-off connectors. MCP replaces that with one protocol in the middle: "[t]hink of MCP like a USB-C port for AI applications" — a standardized way to connect AI applications to external systems, the same way USB-C standardizes how devices plug into each other. Build a server once, against the protocol, and it works with any client that also speaks it — that's already true of the ecosystem: Claude, ChatGPT, VS Code, Cursor, and more all support MCP.</p>
 
-    <h2>// Tools, resources, prompts</h2>
+    <h2>Tools, resources, prompts</h2>
     <p>The protocol defines a small, fixed vocabulary of what a server can offer: <b>tools</b> — functions the model itself decides to call, the same way any tool use works; <b>resources</b> — readable data (a file, a database row, a ticket) that the user or the model can pull into context, surfaced in Claude Code as <code>@server:protocol://resource/path</code> mentions; and <b>prompts</b> — templated workflows the <i>user</i> chooses to run, exposed as slash commands like <code>/mcp__servername__promptname</code>. The three-way split keeps the control boundary honest: the model decides tools, the user decides prompts, and resources just sit there as data for either to use. Three roles sit around this exchange — the <b>host</b> app (Claude Code, VS Code), a <b>client</b> connector inside it per server, and the <b>server</b> itself, all trading JSON-RPC 2.0 messages over a stateful, capability-negotiated connection.</p>
 
-    <h2>// Transports and config</h2>
+    <h2>Transports and config</h2>
     <p>A server is reachable one of two ways. <b>stdio</b> spawns a local process and talks over standard input/output — no network — the fit for anything needing local filesystem access. <b>HTTP</b> (the spec calls it <code>streamable-http</code>) reaches a remote endpoint over the network like any web API; a WebSocket variant exists for servers that push events unprompted rather than just answer requests. Both harnesses in this module configure servers as JSON, with one field-name gotcha: Claude Code keys its <code>.mcp.json</code> under <code>mcpServers</code>, while VS Code's <code>.vscode/mcp.json</code> keys the identical idea under <code>servers</code>. A minimal Claude Code entry:</p>
     <pre style="border:1px solid var(--line);padding:12px;font-family:var(--mono);font-size:.78rem;overflow-x:auto;">{
   "mcpServers": {
@@ -65,10 +65,10 @@
   }
 }</pre>
 
-    <h2>// The interoperability layer</h2>
+    <h2>The interoperability layer</h2>
     <p>Every other concept in this module — plugins, skills, agents, hooks — is scoped to one harness's own extension model. MCP is the piece explicitly designed not to be: a server written once against the protocol is the same process or endpoint whether Claude Code, Claude Desktop, or VS Code's Copilot Chat is connecting to it. Each harness's config file just points at it — that's the whole payoff of building once and integrating everywhere. Actually building a server is a task for the official SDKs, out of scope here beyond knowing they exist.</p>
 
-    <h2>// Pro vs. amateur</h2>
+    <h2>Pro vs. amateur</h2>
     <p>Amateurs connect every server that looks useful; pros connect what the task needs — a connected server's tool descriptions compete for context-window space by default, whether or not the model ever calls them, which is exactly why Claude Code built a whole tool-search system to defer them. Amateurs treat tool results like any other text; pros treat them as untrusted input — a result is data from outside the conversation, and nothing stops it from containing instructions phrased to look like the user's. Amateurs write a server before checking if one exists; pros search first — a working server for a mainstream tool is usually an install command away, not a build task. And amateurs treat a local stdio server as a black box; pros know it's just a process running with their own permissions on their own machine — read what you install.</p>
   </div>
 

@@ -48,22 +48,22 @@
   </div>
 
   <div class="prose">
-    <h2>// A job description in markdown</h2>
+    <h2>A job description in markdown</h2>
     <p>A subagent is a text file: YAML frontmatter followed by a Markdown body. Two frontmatter fields are required — <code>name</code>, a unique lowercase-and-hyphens identifier, and <code>description</code>, which is nothing about the subagent's own behavior but purely "[w]hen Claude should delegate to this subagent." The body underneath becomes the subagent's system prompt. Everything else — <code>tools</code>, <code>disallowedTools</code>, <code>model</code>, <code>permissionMode</code>, and a long tail of optional fields — is configuration on top of that minimum. A subagent with just a name, a description, and a paragraph of body text is a complete, legal subagent; the rest is scaffolding you reach for as needed, not machinery you're required to set up.</p>
 
-    <h2>// Why delegate: context and rails</h2>
+    <h2>Why delegate: context and rails</h2>
     <p>Three distinct benefits, not one. <b>Fresh context, kept clean:</b> each subagent invocation starts a new instance whose initial context is deliberately narrow — its own system prompt, the dispatch prompt, the memory hierarchy, a git-status snapshot, and any preloaded skills, but not the parent conversation's transcript. Expensive, noisy exploration happens in a context window that gets thrown away; only the distilled conclusion crosses back. <b>Restricted tool sets as a design choice:</b> a subagent inherits every tool the parent session has by default, so listing <code>tools</code> explicitly — <code>Read, Glob, Grep</code> for a reviewer, say — is a hard guarantee, not a hopeful instruction, that a review pass can't quietly become an edit pass. <b>Cheaper models for mechanical work:</b> <code>model</code> is set per subagent, independent of whatever the parent session runs on, so a fast, cheap model can handle grep-shaped search work while the strongest available model is reserved for architectural judgment calls.</p>
 
-    <h2>// The dispatch contract</h2>
+    <h2>The dispatch contract</h2>
     <p>A subagent "works independently and returns results." It receives its task message once, at the start, works alone with whatever tools its frontmatter allows, and returns exactly one final message. There is no back-and-forth channel mid-task — a subagent can't ask a clarifying question and wait for an answer. That single constraint is generative: it's the reason writing a good dispatch prompt, not writing a good subagent file, is the actual skill here. Every ambiguity the dispatcher fails to resolve up front either gets guessed at or silently dropped, because there's no second turn to fix it on.</p>
 
-    <h2>// Orchestration patterns</h2>
+    <h2>Orchestration patterns</h2>
     <p>Delegation shapes differ by how the work is structured. <b>Orchestrator-workers:</b> a central model breaks the task down at runtime and synthesizes what comes back, suited to work that "cannot be predetermined." <b>Parallel fan-out</b> for independent investigations — spawn several subagents at once, each exploring its own area, then synthesize; Anthropic's variations on this are sectioning (splitting independent subtasks across agents) and voting (running the same task multiple times for diverse outputs). <b>Pipeline / sequential chaining</b> for staged work, where each subagent's result becomes context for the next. <b>Nested subagents</b> let a subagent spawn its own subagents, so an intermediate breakdown never has to surface in the main conversation at all. Anthropic's broader advice cuts across all of them: favor simple, composable patterns over complex frameworks, and add complexity only once it measurably earns its keep.</p>
 
-    <h2>// The Copilot side</h2>
+    <h2>The Copilot side</h2>
     <p>VS Code's custom agents — formerly called custom chat modes — are the same shape arrived at independently: a <code>.agent.md</code> file with frontmatter for <code>description</code>, <code>tools</code>, <code>model</code>, and a distinguishing <code>handoffs</code> field that wires sequential workflows between agents with a target, a label, a pre-filled prompt, and an auto-submit flag. That's the in-editor, same-session equivalent of a Claude Code subagent. The GitHub Copilot coding agent is a different tier: a standalone cloud agent that researches a repository, plans and makes changes, and opens its own pull request — schedulable, event-driven, and reachable over a REST API, closer to a fire-and-forget teammate than an in-session delegation target.</p>
 
-    <h2>// Pro vs. amateur</h2>
+    <h2>Pro vs. amateur</h2>
     <p>Amateurs treat the subagent file as the hard part and the dispatch prompt as an afterthought; pros know it's the reverse — the file is reusable infrastructure written once, but the dispatch prompt is a fresh work order every time, and it's the prompt that decides whether a given invocation succeeds. Amateurs trust the system prompt to keep a subagent in its lane; pros restrict tools instead, because the difference between being asked not to and being unable to is the entire value of the <code>tools</code> field. Amateurs assume a dispatched result was seen; pros know it has to be relayed back to the user, not just left sitting in the orchestrator's context. And amateurs delegate reflexively; pros know when not to — a task leaning on context already sitting in the current conversation is cheaper to just do inline than to compress into a self-contained dispatch prompt and re-derive on the other side of a fresh context window.</p>
   </div>
 

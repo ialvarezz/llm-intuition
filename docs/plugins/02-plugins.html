@@ -50,19 +50,19 @@
   </div>
 
   <div class="prose">
-    <h2>// One unit, many components</h2>
+    <h2>One unit, many components</h2>
     <p>Concept 01 covered the marketplace — the catalog that points at a plugin's source. This concept opens the thing being pointed at. A plugin is "a self-contained directory of components that extends Claude Code with custom functionality" — components include "skills, agents, hooks, MCP servers, LSP servers, and monitors." Whatever you'd otherwise paste into every session by hand — a tool connection, a specialized subagent, a hook, a shortcut command — goes in the container once, and the container installs as a unit. Components inside a plugin get namespaced (<code>/my-plugin:hello</code> instead of a bare <code>/hello</code>) so two plugins can each ship a skill with the same short name without colliding.</p>
 
-    <h2>// Anatomy on disk</h2>
+    <h2>Anatomy on disk</h2>
     <p>The layout mirrors the component list directly: <code>.claude-plugin/plugin.json</code> is the manifest; <code>skills/</code> holds skills as <code>&lt;name&gt;/SKILL.md</code> directories; <code>commands/</code> holds skills as flat markdown files; <code>agents/</code> holds custom agent definitions; <code>hooks/</code> holds <code>hooks.json</code>; and <code>.mcp.json</code> at plugin root holds MCP server configuration. One hard rule: "Don't put <code>commands/</code>, <code>agents/</code>, <code>skills/</code>, or <code>hooks/</code> inside the <code>.claude-plugin/</code> directory. Only <code>plugin.json</code> goes inside <code>.claude-plugin/</code>." Nothing is mandatory beyond that — a plugin can be a single skill and a manifest and still be complete.</p>
 
-    <h2>// The manifest</h2>
+    <h2>The manifest</h2>
     <p><code>plugin.json</code> is what a marketplace reads before installing anything. Only <code>name</code> is required — a unique identifier that doubles as the namespace prefix. Everything else is metadata: <code>description</code>, <code>version</code>, <code>author</code>. Skip <code>version</code> and the harness falls back silently to the git commit SHA as the version, so every commit becomes an un-communicated release. Component-path fields like <code>skills</code>, <code>commands</code>, and <code>agents</code> can override the default folders, but they don't all behave the same way — most replace the default scan, while <code>skills</code> is the exception and always adds to it.</p>
 
-    <h2>// Install lifecycle</h2>
+    <h2>Install lifecycle</h2>
     <p>What loads and when splits along component lines. MCP servers "start automatically when plugin is enabled" — they're a running process. Skills and commands are "automatically discovered when plugin is installed", but a skill body only enters context when actually invoked. Hooks register their event matchers at load and fire later on the matching lifecycle event. For local development, <code>claude --plugin-dir ./my-plugin</code> loads a plugin from a path with no marketplace step, and <code>/reload-plugins</code> picks up edits without restarting.</p>
 
-    <h2>// Pro vs. amateur</h2>
+    <h2>Pro vs. amateur</h2>
     <p><b>Amateurs build a kitchen-sink plugin. Pros ship one good skill.</b> Enabled plugins add to system-prompt context, which is why the system supports toggling them off when unneeded — ten mediocre skills cost that budget always, whether used or not. <b>Amateurs pick generic component names. Pros name for discoverability.</b> Namespacing (<code>plugin:skill</code>) already prevents collisions; a clear plugin name is what makes it findable in a crowded list. <b>Amateurs publish straight to a marketplace. Pros test locally first.</b> <code>--plugin-dir</code> plus <code>/reload-plugins</code> is the exact same load path without the shared-catalog risk. <b>Amateurs treat <code>plugin.json</code> as a formality. Pros treat it like <code>package.json</code>.</b> Semver and changelogs matter the moment teammates depend on a plugin — an unversioned manifest tracks a moving commit SHA instead of a deliberate release.</p>
   </div>
 

@@ -47,21 +47,21 @@
   </div>
 
   <div class="prose">
-    <h2>// The worked example: pr-buddy</h2>
+    <h2>The worked example: pr-buddy</h2>
     <p>The rest of this module has described plugin <i>parts</i> — a marketplace entry, a manifest field, a skill's frontmatter, an agent's tool list. This concept builds one complete, small plugin end to end: <b>pr-buddy</b>, bundling one skill (<code>review-pr</code>, a checklist-driven PR review) and one agent (<code>test-writer</code>, which writes missing tests). The note carries the full, copy-pasteable files; this page walks the structure.</p>
 
-    <h2>// Scaffold and manifest</h2>
+    <h2>Scaffold and manifest</h2>
     <p>A plugin's manifest is required at <code>.claude-plugin/plugin.json</code>, and everything else — skills, commands, agents, hooks — has to sit at the plugin's root, not inside <code>.claude-plugin/</code>. The manifest only strictly requires <code>name</code>, a unique kebab-case identifier that also sets the skill namespace: a skill called <code>hello</code> in a plugin named <code>my-first-plugin</code> is invoked as <code>/my-first-plugin:hello</code>. pr-buddy's manifest adds <code>description</code> and <code>version</code> on top of the required minimum — <code>description</code> is what a user browsing the plugin manager sees, and <code>version</code> is what gates future updates.</p>
 
-    <h2>// The skill and the agent</h2>
+    <h2>The skill and the agent</h2>
     <p>Concept 04 established that a skill's <code>description</code> is the whole interface — the model decides whether to load the body from that field alone, so it has to state both what the skill does and when to use it, not just its domain. <code>review-pr</code>'s description names a concrete trigger phrase instead of a generic label. Concept 05 established that a subagent's tool allowlist is a hard wall, not a suggestion the model might drift from — <code>test-writer</code>'s frontmatter restricts <code>tools</code> to exactly <code>Read, Write, Bash</code>, nothing more, so it cannot touch source files outside the one it was dispatched to cover.</p>
     <p>MCP servers can be bundled into a plugin too, via a <code>.mcp.json</code> at the plugin root or an inline field in <code>plugin.json</code> — see Concept 03 for how MCP fits in. pr-buddy doesn't need one.</p>
 
-    <h2>// Test locally, then publish</h2>
+    <h2>Test locally, then publish</h2>
     <p>Before pr-buddy touches a marketplace, <code>claude --plugin-dir ./pr-buddy</code> loads it directly from a local path, and <code>/reload-plugins</code> picks up edits without restarting the session. A real local test pass runs in a fresh session and checks three things: the skill triggers on a realistic phrase, the agent is dispatchable, and — the part amateurs skip — a near-miss phrase that shouldn't trigger the skill doesn't.</p>
     <p>Publishing has two moving parts: pr-buddy's own git repo, and a separate marketplace repo containing <code>.claude-plugin/marketplace.json</code> with a <code>name</code>, <code>owner</code>, and a <code>plugins</code> array pointing at pr-buddy's source. <code>/plugin marketplace add you/your-marketplace</code> followed by <code>/plugin install pr-buddy@your-marketplace</code> installs it from there. Once published, updates are gated by version, not by commits — pushing a fix without bumping <code>version</code> does nothing for anyone who already installed the prior version. Bumps follow semver: PATCH for a fix, MINOR for a new skill or agent, MAJOR for a breaking change to what's already there.</p>
 
-    <h2>// Pro vs. amateur</h2>
+    <h2>Pro vs. amateur</h2>
     <p>Set <code>version</code> and start a changelog from day one — an unversioned plugin lets the commit SHA do the versioning silently, and a teammate's session can pick up a half-finished commit mid-edit. Test in a fresh session, not the one where the plugin was designed — that session already discussed the trigger phrase at length, which tells you nothing about whether a real user's request would have matched the description cold. Write the README for the human deciding whether to install pr-buddy; write the skill and agent descriptions for the model deciding whether to trigger them — one document trying to serve both jobs under-serves whichever reader shows up second. And start as a local <code>--plugin-dir</code> install, used in real PR reviews for a while, before it earns a marketplace entry — a week of real use surfaces the over-broad triggers a same-day publish never catches.</p>
   </div>
 
