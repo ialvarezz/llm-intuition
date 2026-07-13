@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deck · AI Plugins — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+.slide{min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  padding:48px min(8vw,96px);border-bottom:1px solid var(--line);position:relative;z-index:1;}
+.slide h2{font-family:var(--mono);font-size:clamp(1.4rem,4vw,2.2rem);color:#f3f5f7;margin:0 0 18px;}
+.slide h2 .hl{color:var(--blue);}
+.slide ul{color:#adb3ba;line-height:1.9;font-size:1.05rem;max-width:62ch;}
+.slide .kicker{font-family:var(--mono);font-size:.68rem;letter-spacing:.22em;color:var(--blue);text-transform:uppercase;}
+.slide pre{background:var(--panel);border:1px solid var(--line);padding:16px;font-size:.85rem;overflow-x:auto;max-width:70ch;}
+body.deck-mode .slide{display:none;}
+body.deck-mode .slide.on{display:flex;}
+#hud{position:fixed;bottom:14px;right:20px;z-index:2;font-family:var(--mono);
+  font-size:.68rem;letter-spacing:.14em;color:var(--faint);}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<section class="slide" id="s-1">
+  <span class="kicker">AI Plugins</span>
+  <h2>AI <span class="hl">Plugins</span> — from zero to shipping</h2>
+  <ul>
+    <li>Module A1 · 45–60 minutes</li>
+    <li>Marketplaces, plugins, MCP, skills, agents, hooks</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-2">
+  <span class="kicker">Opening</span>
+  <h2>Why extend your assistant at all</h2>
+  <ul>
+    <li>Repeated prompting is copy-paste engineering</li>
+    <li>It doesn't version, share, or survive a teammate joining</li>
+    <li>Packaging turns instructions into an artifact: named, versioned, reviewable</li>
+    <li>That artifact is a plugin — the subject of this whole deck</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-3">
+  <span class="kicker">Opening</span>
+  <h2>Agenda — nine sections</h2>
+  <ul>
+    <li>Primer · Marketplaces &amp; plugins · MCP</li>
+    <li>Skills · Agents · Hooks &amp; commands</li>
+    <li>Build &amp; ship · Close (decision matrix)</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-4">
+  <span class="kicker">Primer</span>
+  <h2>Next-token prediction, looped</h2>
+  <ul>
+    <li>An LLM predicts the next token — that's the whole operation</li>
+    <li>Chat is that operation run in a loop over a growing transcript</li>
+    <li>Nothing about "conversation" requires new machinery</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-5">
+  <span class="kicker">Primer</span>
+  <h2>The context window is working memory</h2>
+  <ul>
+    <li>"The amount of text a model can look back on and reference"</li>
+    <li>Not the training corpus — a bounded working memory</li>
+    <li>Every plugin, tool, or injected context competes for this same space</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-6">
+  <span class="kicker">Primer</span>
+  <h2>Tool use — the model asks, the harness acts</h2>
+  <ul>
+    <li>A raw LLM has no hands: can't run a command or call an API</li>
+    <li>Model returns a structured call; the surrounding app executes it</li>
+    <li>Model decides per-turn whether a request maps to a tool</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-7">
+  <span class="kicker">Primer</span>
+  <h2>The agent loop</h2>
+  <ul>
+    <li>Workflows: predefined code paths. Agents: the model directs itself</li>
+    <li>Loop: model decides → harness acts → result re-enters context → repeat</li>
+    <li>Same next-token loop as chat, just fed tool output each turn</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-8">
+  <span class="kicker">Primer — thesis</span>
+  <h2>Plugins extend the <span class="hl">harness</span>, not the model</h2>
+  <ul>
+    <li>The model's weights never change between tool calls or plugins</li>
+    <li>The harness is what varies: Claude Code, Copilot, etc.</li>
+    <li>A plugin is a new tool, new context, or new command the harness gains</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-9">
+  <span class="kicker">Marketplaces &amp; plugins</span>
+  <h2>A catalog, not a store</h2>
+  <ul>
+    <li>A marketplace is metadata — a list of pointers, not hosted code</li>
+    <li>"Centralized discovery, version tracking, automatic updates"</li>
+    <li>Backed by git repos, URLs, or local paths</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-10">
+  <span class="kicker">Marketplaces &amp; plugins</span>
+  <h2>marketplace.json anatomy</h2>
+  <pre>{
+  "name": "your-marketplace",
+  "owner": { "name": "Your Name" },
+  "plugins": [
+    { "name": "pr-buddy", "source": "./plugins/pr-buddy" }
+  ]
+}</pre>
+  <ul><li>Required: name · owner · plugins. Each entry: name · source</li></ul>
+</section>
+
+<section class="slide" id="s-11">
+  <span class="kicker">Marketplaces &amp; plugins</span>
+  <h2>Install flow — a two-step handshake</h2>
+  <pre>/plugin marketplace add user-or-org/repo-name
+/plugin install plugin-name@marketplace-name</pre>
+  <ul><li>Step 1 registers the catalog. Step 2 installs by name from it</li></ul>
+</section>
+
+<section class="slide" id="s-12">
+  <span class="kicker">Marketplaces &amp; plugins</span>
+  <h2>Plugin = the container</h2>
+  <pre>enterprise-plugin/
+├── .claude-plugin/
+│   └── plugin.json
+├── skills/
+├── commands/
+├── agents/
+├── hooks/
+├── bin/
+└── .mcp.json</pre>
+  <ul><li>Any mix of skills, agents, hooks, MCP servers, LSP servers</li></ul>
+</section>
+
+<section class="slide" id="s-13">
+  <span class="kicker">Marketplaces &amp; plugins</span>
+  <h2>The manifest</h2>
+  <ul>
+    <li><code>.claude-plugin/plugin.json</code> — only <code>name</code> required</li>
+    <li>Sets the namespace: <code>my-plugin:hello</code>, not <code>/hello</code></li>
+    <li>Skip <code>version</code> and every commit silently becomes a new release</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-14">
+  <span class="kicker">Marketplaces &amp; plugins</span>
+  <h2>Trust — you are running their code</h2>
+  <ul>
+    <li>A marketplace listing doesn't vet or sandbox anything for you</li>
+    <li>Hooks and MCP servers run with your session's own access</li>
+    <li>Pin to a ref/sha; review source before installing, like any dependency</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-15">
+  <span class="kicker">MCP</span>
+  <h2>The N×M problem</h2>
+  <ul>
+    <li>N assistants × M tools = N×M bespoke, brittle integrations</li>
+    <li>MCP: "a USB-C port for AI applications"</li>
+    <li>Build one server against the protocol; every compliant client can use it</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-16">
+  <span class="kicker">MCP</span>
+  <h2>Tools, resources, prompts</h2>
+  <ul>
+    <li><b>Tools</b> — functions the model decides to call</li>
+    <li><b>Resources</b> — context/data for user or model to pull in</li>
+    <li><b>Prompts</b> — templated workflows the user chooses to run</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-17">
+  <span class="kicker">MCP</span>
+  <h2>The handshake</h2>
+  <ul>
+    <li>Host (Claude Code) ⟶ Client (one connector per server) ⟶ Server</li>
+    <li>JSON-RPC 2.0, stateful, capability negotiation on connect</li>
+    <li>Servers can add tools mid-session via <code>list_changed</code> notifications</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-18">
+  <span class="kicker">MCP</span>
+  <h2>One server, both harnesses</h2>
+  <pre>// Claude Code — .mcp.json
+{ "mcpServers": {
+  "github": { "command": "npx", "args": ["-y","@some/mcp-server"] } } }
+
+// VS Code Copilot — .vscode/mcp.json
+{ "servers": {
+  "github": { "type": "http", "url": "https://api.githubcopilot.com/mcp" } } }</pre>
+  <ul><li>Same server, same protocol — just a different top-level key</li></ul>
+</section>
+
+<section class="slide" id="s-19">
+  <span class="kicker">Skills</span>
+  <h2>What a skill is</h2>
+  <pre>---
+name: my-skill-name
+description: A clear description of what this skill does and when to use it
+---
+# My Skill Name
+[Instructions Claude will follow when this skill is active]</pre>
+  <ul><li>Prose the model reads — not code the harness executes</li></ul>
+</section>
+
+<section class="slide" id="s-20">
+  <span class="kicker">Skills</span>
+  <h2>Progressive disclosure — three levels</h2>
+  <ul>
+    <li>Level 1: name + description, loaded always, at startup</li>
+    <li>Level 2: full SKILL.md body, loaded when relevant</li>
+    <li>Level 3+: bundled files, loaded only as needed, via filesystem</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-21">
+  <span class="kicker">Skills</span>
+  <h2>The token math</h2>
+  <ul>
+    <li>Level 1 metadata: ~100 tokens per skill</li>
+    <li>Level 2 body: under 5k tokens</li>
+    <li>Level 3+ resources: effectively unlimited — never read as text</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-22">
+  <span class="kicker">Skills</span>
+  <h2>The description is the <span class="hl">API</span></h2>
+  <ul>
+    <li>Model decides whether to load the body from the description alone</li>
+    <li>A body that never triggers delivers zero value</li>
+    <li>Needs both what the skill does <i>and</i> when to use it</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-23">
+  <span class="kicker">Skills</span>
+  <h2>Good vs. bad description</h2>
+  <pre>bad:  "powerful toolkit for all your document needs"
+
+good: "Use when reviewing a pull request or when asked
+       to check a diff before merge."</pre>
+</section>
+
+<section class="slide" id="s-24">
+  <span class="kicker">Skills</span>
+  <h2>Writing the body</h2>
+  <ul>
+    <li>Heading + Instructions (step-by-step) + Examples</li>
+    <li>Keep SKILL.md under 500 lines — split unwieldy files out</li>
+    <li>Rendered body enters context once and stays for the session</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-25">
+  <span class="kicker">Skills</span>
+  <h2>Testing — fresh session, negative case</h2>
+  <ul>
+    <li>Measure two axes: does it trigger, and is the output right</li>
+    <li>Run each prompt fresh, with and without the skill enabled</li>
+    <li>Test near-miss prompts too — over-triggering is the amateur miss</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-26">
+  <span class="kicker">Skills</span>
+  <h2>Failure modes</h2>
+  <ul>
+    <li>Vague description → never triggers</li>
+    <li>Over-broad description → triggers everywhere</li>
+    <li>Giant body → context bloat, persists all session</li>
+    <li>Contradicts CLAUDE.md → the model resolves confusion mid-task</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-27">
+  <span class="kicker">Agents</span>
+  <h2>The agent file</h2>
+  <pre>---
+name: code-reviewer
+description: Reviews code for quality and best practices
+tools: Read, Glob, Grep
+model: sonnet
+---
+You are a code reviewer. When invoked, analyze the code and
+provide specific, actionable feedback.</pre>
+</section>
+
+<section class="slide" id="s-28">
+  <span class="kicker">Agents</span>
+  <h2>Why delegate</h2>
+  <ul>
+    <li>Fresh context — the parent transcript never enters the subagent</li>
+    <li>Restricted tool sets are a hard wall, not a suggestion</li>
+    <li>Cheaper models for mechanical, search-and-report work</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-29">
+  <span class="kicker">Agents</span>
+  <h2>The dispatch contract</h2>
+  <ul>
+    <li>Subagent gets its task message once — no mid-task follow-up</li>
+    <li>It works alone and returns exactly one final message</li>
+    <li>A result lands in the orchestrator's context, not the user's view</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-30">
+  <span class="kicker">Agents</span>
+  <h2>The work-order rule</h2>
+  <pre>bad:  "fix the bug"
+
+good: "Bug: X fails on empty input in file Y, line Z.
+       Deliverable: a fix plus one test covering it.
+       Constraint: don't touch the public API."</pre>
+</section>
+
+<section class="slide" id="s-31">
+  <span class="kicker">Agents</span>
+  <h2>Orchestration patterns</h2>
+  <ul>
+    <li>Fan-out: independent work in parallel, findings synthesized</li>
+    <li>Pipeline: sequential, each stage passes context to the next</li>
+    <li>Nested subagents: a delegated task splits further, one layer deeper</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-32">
+  <span class="kicker">Agents</span>
+  <h2>Model-per-agent economics</h2>
+  <ul>
+    <li><code>model</code> is set per subagent, independent of the parent</li>
+    <li>Fast/cheap model for mechanical work; frontier model for judgment</li>
+    <li>Default is <code>inherit</code> — an unset agent silently costs more or less</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-33">
+  <span class="kicker">Agents</span>
+  <h2>When NOT to delegate</h2>
+  <ul>
+    <li>Task leans on context already in the current conversation</li>
+    <li>Cheaper to do inline than compress into a self-contained dispatch</li>
+    <li>"Start simple, add complexity only when it measurably improves"</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-34">
+  <span class="kicker">Hooks &amp; commands</span>
+  <h2>Suggestions vs. guarantees</h2>
+  <ul>
+    <li>Skills and MCP put information in front of the model — it decides</li>
+    <li>Hooks are deterministic code the harness runs, no model judgment</li>
+    <li>"Run the tests" as a prompt is a wish; as a hook, it's a law</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-35">
+  <span class="kicker">Hooks &amp; commands</span>
+  <h2>The event catalog</h2>
+  <ul>
+    <li>27 distinct lifecycle events — session, per-turn, agentic-loop</li>
+    <li>PreToolUse can block or rewrite input, before the tool runs</li>
+    <li>PostToolUse can inject context or rewrite output — but can't undo</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-36">
+  <span class="kicker">Hooks &amp; commands</span>
+  <h2>Slash commands, in one slide</h2>
+  <ul>
+    <li>User types <code>/name</code>; harness expands it into a prompt</li>
+    <li>Now merged into skills — one file format, two invocation modes</li>
+    <li><code>disable-model-invocation</code> vs. <code>user-invocable: false</code></li>
+  </ul>
+</section>
+
+<section class="slide" id="s-37">
+  <span class="kicker">Build &amp; ship</span>
+  <h2>pr-buddy scaffold</h2>
+  <pre>pr-buddy/
+├── .claude-plugin/plugin.json
+├── skills/review-pr/SKILL.md
+└── agents/test-writer.md</pre>
+  <ul><li>One skill (review checklist) + one agent (writes missing tests)</li></ul>
+</section>
+
+<section class="slide" id="s-38">
+  <span class="kicker">Build &amp; ship</span>
+  <h2>The skill + the agent</h2>
+  <pre>review-pr: "Use when reviewing a pull request or
+             asked to check a diff before merge."
+
+test-writer:
+  tools: Read, Write, Bash
+  "Writes missing tests for a given file.
+   Do not modify the file under test."</pre>
+</section>
+
+<section class="slide" id="s-39">
+  <span class="kicker">Build &amp; ship</span>
+  <h2>Test locally, negative case included</h2>
+  <pre>$ claude --plugin-dir ./pr-buddy
+> "review this PR"                 ✓ skill triggered
+> dispatch test-writer on file X   ✓ agent writes test
+> "fix this typo"                  ✓ negative: no trigger</pre>
+</section>
+
+<section class="slide" id="s-40">
+  <span class="kicker">Build &amp; ship</span>
+  <h2>Publish</h2>
+  <pre>git push origin main
+> /plugin marketplace add you/your-marketplace
+> /plugin install pr-buddy@your-marketplace</pre>
+  <ul><li>Bump <code>version</code> deliberately — pushing commits alone isn't enough</li></ul>
+</section>
+
+<section class="slide" id="s-41">
+  <span class="kicker">Build &amp; ship</span>
+  <h2>Install it in Copilot too</h2>
+  <ul>
+    <li>MCP and Agent Skills are open standards — near-zero rework</li>
+    <li>AGENTS.md is the shared, vendor-neutral instructions file</li>
+    <li>Hooks and vendor-specific frontmatter are the least portable layer</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-42">
+  <span class="kicker">Close</span>
+  <h2>The decision matrix</h2>
+  <ul>
+    <li>Knowledge gap → skill. Capability gap → MCP server</li>
+    <li>Context pollution → subagent. Must-hold-every-time → hook</li>
+    <li>Repetition → slash command. One-off → plain prompt</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-43">
+  <span class="kicker">Close</span>
+  <h2>Escalate only on <span class="hl">evidence</span></h2>
+  <ul>
+    <li>prompt → command → skill → agent/MCP</li>
+    <li>Each step up is justified only once the cheaper step demonstrably fails</li>
+    <li>Delete plugins that stopped earning their tokens</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-44">
+  <span class="kicker">Close</span>
+  <h2>Links</h2>
+  <ul>
+    <li><a href="index.html">Module A1 — plugins/index.html</a></li>
+    <li>Claude Code docs: https://code.claude.com/docs/en/plugins</li>
+    <li>GitHub Copilot docs: https://docs.github.com/en/copilot</li>
+  </ul>
+</section>
+
+<div id="hud"></div>
+<script>
+const slides = [...document.querySelectorAll(".slide")];
+const hud = document.getElementById("hud");
+let cur = Math.max(0, slides.findIndex(s => location.hash === "#"+s.id));
+document.body.classList.add("deck-mode");
+function show(n){
+  cur = Math.min(slides.length-1, Math.max(0, n));
+  slides.forEach((s,i) => s.classList.toggle("on", i===cur));
+  hud.textContent = `${cur+1} / ${slides.length} · ←→`;
+  if (slides[cur].id) history.replaceState(null,"","#"+slides[cur].id);
+}
+addEventListener("keydown", e => {
+  if (e.key==="ArrowRight"||e.key===" "||e.key==="PageDown") show(cur+1);
+  if (e.key==="ArrowLeft"||e.key==="PageUp") show(cur-1);
+});
+addEventListener("click", e => { if (!e.target.closest("a")) show(cur+1); });
+show(cur);
+</script>
+</body>
+</html>
