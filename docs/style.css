@@ -93,6 +93,7 @@ textarea,input[type=text]{background:var(--bg);border:1px solid var(--line);colo
 .ref .src{font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;color:var(--blue);
   text-transform:uppercase;}
 .ref .t{margin-top:6px;font-size:.88rem;color:var(--fg);line-height:1.4;}
+.ref.deck{border-left:2px solid var(--blue);}
 
 /* prev/next pager */
 .pager{display:flex;justify-content:space-between;margin:0 28px 64px;gap:1px;
