@@ -36,8 +36,8 @@
   <div class="panel">
     <div class="panel-hd"><span><span class="dot">●</span> THE AGENT LOOP</span><span>INTERACTIVE</span></div>
     <div class="panel-body" id="fig">
-      <div id="loop-boxes" style="display:flex;gap:8px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;"></div>
-      <div id="loop-msg" style="margin-top:16px;padding:14px;border:1px solid var(--line);font-size:.88rem;line-height:1.6;min-height:4.5em;color:var(--fg);"></div>
+      <div id="loop-boxes" style="display:flex;gap:8px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;"><span style="padding:10px 14px;border:1px solid #00c7fd;color:#00c7fd">USER</span><span style="align-self:center;color:#4a4f55">→</span><span style="padding:10px 14px;border:1px solid #263039;color:#4a4f55">MODEL</span><span style="align-self:center;color:#4a4f55">→</span><span style="padding:10px 14px;border:1px solid #263039;color:#4a4f55">TOOL</span><span style="align-self:center;color:#4a4f55">→</span><span style="padding:10px 14px;border:1px solid #263039;color:#4a4f55">MODEL</span><span style="align-self:center;color:#4a4f55">→</span><span style="padding:10px 14px;border:1px solid #263039;color:#4a4f55">USER</span></div>
+      <div id="loop-msg" style="margin-top:16px;padding:14px;border:1px solid var(--line);font-size:.88rem;line-height:1.6;min-height:4.5em;color:var(--fg);">USER → MODEL: "What changed in the repo this week?"</div>
       <button class="btn" id="loop-btn" style="margin-top:14px;">Step ▸</button>
     </div>
     <div class="panel-ft" id="fig-ft">ONE TASK · FOUR HOPS</div>
