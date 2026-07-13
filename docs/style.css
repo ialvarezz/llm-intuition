@@ -106,3 +106,20 @@ textarea,input[type=text]{background:var(--bg);border:1px solid var(--line);colo
 .pager span.gap{flex:1;background:var(--panel);}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+
+/* filter chips + card tags */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 28px 24px;}
+.chip{font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;
+  text-transform:uppercase;background:none;border:1px solid var(--line);
+  color:var(--muted);padding:6px 12px;cursor:pointer;}
+.chip:hover{border-color:var(--blue-deep);color:var(--blue);}
+.chip.on{border-color:var(--blue);color:var(--blue);}
+.chip:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+.ref .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.ref .tags span{font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint);border:1px solid var(--line);padding:2px 7px;}
+
+/* landing track sections */
+.track-hd{margin:0 28px 12px;font-family:var(--mono);font-size:.68rem;
+  letter-spacing:.22em;color:var(--faint);text-transform:uppercase;}
+.track-hd b{color:var(--blue);}
