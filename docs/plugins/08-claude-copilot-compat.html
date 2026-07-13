@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 · Claude ↔ Copilot Compatibility — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">A1 Index</a>
+    <a href="00-primer.html">00</a>
+    <a href="01-marketplaces.html">01</a>
+    <a href="02-plugins.html">02</a>
+    <a href="03-mcp-servers.html">03</a>
+    <a href="04-skills.html">04</a>
+    <a href="05-agents.html">05</a>
+    <a href="06-hooks-and-commands.html">06</a>
+    <a href="07-building-a-plugin.html">07</a>
+    <a class="on" href="08-claude-copilot-compat.html">08</a>
+    <a href="09-which-one-when.html">09</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module A1 / Concept 08</span>
+    <h1>Claude ↔ Copilot <span class="hl">Compatibility</span></h1>
+    <p class="sub">One integration, two harnesses. What carries over as-is, what needs translating, and what stays vendor-locked — component by component.</p>
+    <div class="meta"><span>Read <b>9 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Concept 07</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> COMPATIBILITY MATRIX / INTERACTIVE</span><span>CLICK A CELL</span></div>
+    <div class="panel-body">
+<table id="cmp" style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.76rem;">
+  <tr style="color:#848a91;letter-spacing:.12em;"><th style="text-align:left;padding:8px;border:1px solid #263039;">COMPONENT</th><th style="padding:8px;border:1px solid #263039;">CLAUDE CODE</th><th style="padding:8px;border:1px solid #263039;">COPILOT</th></tr>
+</table>
+    </div>
+    <div class="panel-ft" id="fig-ft">● FULL · ◐ PARTIAL / DIFFERENT FORMAT · ○ NO EQUIVALENT — CLICK A CELL</div>
+    <div class="figure-note">Snapshot as of the fetch date in the research dump — this layer shifts quarterly.</div>
+  </div>
+
+  <div class="prose">
+    <h2>The portable layers</h2>
+    <p>Portability tracks how open the underlying spec is, not which vendor built the harness. MCP is an open protocol; Agent Skills is an open standard; AGENTS.md is a shared file both harnesses read. Those three layers move between Claude Code and Copilot with little or no translation. An MCP server is written once and registered twice — Claude Code reads a <code>mcpServers</code> block in <code>.mcp.json</code>, VS Code Copilot reads a <code>servers</code> block in <code>.vscode/mcp.json</code>, and the server binary and protocol are identical. Skills follow the same Agent Skills spec on both sides: a <code>SKILL.md</code> with <code>name</code> and <code>description</code> frontmatter. GitHub documents full support across the Copilot cloud agent, code review, the CLI, and agent mode in VS Code and JetBrains; Claude Code implements the same spec and extends it with extra control fields — a base-spec skill moves with no changes, a skill leaning on Claude-only fields needs those stripped.</p>
+    <h2>Instructions: AGENTS.md</h2>
+    <p>AGENTS.md is the vendor-neutral instructions file — an open format governed under the Linux Foundation, used by tens of thousands of projects, with both Anthropic and GitHub Copilot on its supporter list. On the Copilot side the nearest AGENTS.md in the directory tree takes precedence, and a lone root CLAUDE.md is even picked up as a fallback. The practical move: keep one canonical file and have the other include it — a one-line CLAUDE.md pointing at AGENTS.md beats two hand-maintained copies that drift.</p>
+    <h2>Agents: same idea, different files</h2>
+    <p>A Claude Code subagent and a Copilot custom agent are the same concept — a system prompt plus a tool allowlist plus a model choice, scoped to a role. The file formats differ (subagent markdown vs. <code>.agent.md</code> in <code>.github/agents</code>), and Claude Code's version carries extras — persistent memory, worktree isolation, per-subagent hooks — that have no documented Copilot counterpart. Translating the shared fields is mechanical: copy the prompt body, map <code>tools</code> to <code>tools</code>, <code>model</code> to <code>model</code>. The extras are lossy.</p>
+    <h2>The vendor-locked layer</h2>
+    <p>Hooks are the least portable component. Claude Code publishes a full lifecycle catalog — dozens of events, five execution types, a structured JSON contract. Copilot documents a hooks feature in one line: run your own commands at key points in the agent's loop. The concept crosses over; the granular event names don't. Slash commands fare better: Claude Code's command templates (now part of the skills system) map one-for-one onto Copilot's Prompt Files (<code>*.prompt.md</code>) — same role, different file extension.</p>
+    <h2>A portability strategy</h2>
+    <p>Put as much of an integration's knowledge as possible into the portable layers — one MCP server, one AGENTS.md, skills written to the base Agent Skills spec — and keep the harness-specific layer as a thin wrapper on top. A team that does this can switch assistants, or run both side by side, and only the wrapper needs rewriting.</p>
+    <h2>Pro vs. amateur</h2>
+    <p><strong>Amateurs design for one harness and port later; pros design for the portable layers first</strong> and treat vendor-specific glue as the last thing they add. <strong>Amateurs copy the same standards into CLAUDE.md and AGENTS.md; pros pick one canonical file and include it from the other</strong> — duplicates drift the moment one is edited. <strong>Amateurs ship compatibility claims from a single search result; pros verify against current docs</strong> — this layer shifts quarterly, and this page's matrix is dated to its research fetch. <strong>Amateurs assume cross-tool means rewrite; pros standardize on MCP + AGENTS.md + base-spec skills</strong> and switch assistants with near-zero rework.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://agents.md/"><span class="src">Spec · Linux Foundation</span><span class="t">AGENTS.md — the open agent-instructions format</span></a>
+    <a class="ref" href="https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot"><span class="src">Docs · GitHub</span><span class="t">Repository custom instructions for GitHub Copilot</span></a>
+    <a class="ref" href="https://docs.github.com/en/copilot/concepts/agents/about-agent-skills"><span class="src">Docs · GitHub</span><span class="t">About Agent Skills</span></a>
+    <a class="ref" href="https://code.visualstudio.com/docs/copilot/chat/mcp-servers"><span class="src">Docs · VS Code</span><span class="t">MCP servers in VS Code</span></a>
+    <a class="ref" href="https://code.visualstudio.com/docs/copilot/copilot-customization"><span class="src">Docs · VS Code</span><span class="t">Copilot customization approaches</span></a>
+    <a class="ref" href="https://code.claude.com/docs/en/mcp"><span class="src">Docs · Anthropic</span><span class="t">Connect Claude Code to tools via MCP</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="07-building-a-plugin.html">← 07 · Building &amp; Publishing</a>
+    <a class="next" href="09-which-one-when.html">09 · Which One, When →</a>
+  </nav>
+</main>
+<script>
+const ROWS = [
+  ["MCP SERVERS","●","●","Fully portable — same server binary; mcpServers block in .mcp.json.","Native support — servers block in .vscode/mcp.json, discovered automatically; same protocol."],
+  ["PROJECT INSTRUCTIONS","●","●","CLAUDE.md, plus AGENTS.md — the cross-tool standard both sides read.","Custom instructions + AGENTS.md (nearest file wins); a root CLAUDE.md is read as fallback."],
+  ["SKILLS","●","●","First-class: SKILL.md, progressive disclosure, extended control fields.","Full support on the same open standard: cloud agent, code review, CLI, VS Code & JetBrains agent mode."],
+  ["AGENTS","●","◐","Subagent files: frontmatter + system prompt, plus memory, isolation, hooks.","Custom agents (.agent.md): same concept, fewer fields — mechanical translation, lossy for extras."],
+  ["HOOKS","●","◐","Full lifecycle catalog: dozens of events, five execution types, JSON contract.","Hooks exist (run commands at key points in the loop) but no published event catalog."],
+  ["SLASH COMMANDS","●","◐","Prompt templates, now part of the skills system.","Prompt Files (*.prompt.md) serve the same role — one-for-one rewrite."],
+];
+const tbl = document.getElementById("cmp"), ftC = document.getElementById("fig-ft");
+ROWS.forEach((r,i) => {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `<td style="padding:8px;border:1px solid #263039;color:#dcdee0;">${r[0]}</td>` +
+    [1,2].map(c => `<td data-r="${i}" data-c="${c}" style="cursor:pointer;text-align:center;padding:8px;border:1px solid #263039;color:${r[c]==="●"?"#57b06a":r[c]==="◐"?"#e08a3c":"#4a4f55"};font-size:1rem;">${r[c]}</td>`).join("");
+  tbl.appendChild(tr);
+});
+tbl.addEventListener("click", e => {
+  const td = e.target.closest("[data-r]"); if (!td) return;
+  tbl.querySelectorAll("[data-r]").forEach(o => o.style.background = "");
+  td.style.background = "rgba(0,199,253,.12)";
+  const r = ROWS[+td.dataset.r];
+  ftC.textContent = `${r[0]} · ${td.dataset.c==="1"?"CLAUDE CODE":"COPILOT"}: ${r[+td.dataset.c+2].toUpperCase()}`;
+});
+ftC.textContent = "● FULL · ◐ PARTIAL / DIFFERENT FORMAT · ○ NO EQUIVALENT — CLICK A CELL";
+</script>
+</body>
+</html>
