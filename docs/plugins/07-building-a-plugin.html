@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 · Building &amp; Publishing a Plugin — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">A1 Index</a>
+    <a href="00-primer.html">00</a>
+    <a href="01-marketplaces.html">01</a>
+    <a href="02-plugins.html">02</a>
+    <a href="03-mcp-servers.html">03</a>
+    <a href="04-skills.html">04</a>
+    <a href="05-agents.html">05</a>
+    <a href="06-hooks-and-commands.html">06</a>
+    <a href="07-building-a-plugin.html" class="on">07</a>
+    <a href="08-claude-copilot-compat.html">08</a>
+    <a href="09-which-one-when.html">09</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module A1 / Concept 07</span>
+    <h1>Building &amp; <span class="hl">Publishing</span></h1>
+    <p class="sub">From empty directory to installable plugin: one skill, one agent, a manifest, and a marketplace entry. The whole path, no hand-waving.</p>
+    <div class="meta"><span>Read <b>11 min</b></span><span>Level <b>Deep dive</b></span><span>Prereq <b>Concept 06</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> BUILD WALKTHROUGH / INTERACTIVE</span><span>PR-BUDDY · 6 STEPS</span></div>
+    <div class="panel-body" id="fig">
+<div style="display:flex;gap:14px;flex-wrap:wrap;">
+  <ol id="bld-steps" style="flex:1;min-width:180px;list-style:none;padding:0;margin:0;font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;line-height:2.4;color:#4a4f55;"></ol>
+  <pre id="bld-pane" style="flex:2;min-width:260px;margin:0;padding:14px;border:1px solid var(--line);font-family:var(--mono);font-size:.74rem;line-height:1.6;color:var(--fg);overflow-x:auto;"></pre>
+</div>
+<button class="btn" id="bld-btn" style="margin-top:16px;">Next ▸</button>
+    </div>
+    <div class="panel-ft" id="fig-ft">STEP 1/6 — SAME PATH FOR EVERY PLUGIN, WHATEVER IT BUNDLES</div>
+    <div class="figure-note">Abbreviated file contents — the note carries the full, copy-pasteable versions.</div>
+  </div>
+
+  <div class="prose">
+    <h2>// The worked example: pr-buddy</h2>
+    <p>The rest of this module has described plugin <i>parts</i> — a marketplace entry, a manifest field, a skill's frontmatter, an agent's tool list. This concept builds one complete, small plugin end to end: <b>pr-buddy</b>, bundling one skill (<code>review-pr</code>, a checklist-driven PR review) and one agent (<code>test-writer</code>, which writes missing tests). The note carries the full, copy-pasteable files; this page walks the structure.</p>
+
+    <h2>// Scaffold and manifest</h2>
+    <p>A plugin's manifest is required at <code>.claude-plugin/plugin.json</code>, and everything else — skills, commands, agents, hooks — has to sit at the plugin's root, not inside <code>.claude-plugin/</code>. The manifest only strictly requires <code>name</code>, a unique kebab-case identifier that also sets the skill namespace: a skill called <code>hello</code> in a plugin named <code>my-first-plugin</code> is invoked as <code>/my-first-plugin:hello</code>. pr-buddy's manifest adds <code>description</code> and <code>version</code> on top of the required minimum — <code>description</code> is what a user browsing the plugin manager sees, and <code>version</code> is what gates future updates.</p>
+
+    <h2>// The skill and the agent</h2>
+    <p>Concept 04 established that a skill's <code>description</code> is the whole interface — the model decides whether to load the body from that field alone, so it has to state both what the skill does and when to use it, not just its domain. <code>review-pr</code>'s description names a concrete trigger phrase instead of a generic label. Concept 05 established that a subagent's tool allowlist is a hard wall, not a suggestion the model might drift from — <code>test-writer</code>'s frontmatter restricts <code>tools</code> to exactly <code>Read, Write, Bash</code>, nothing more, so it cannot touch source files outside the one it was dispatched to cover.</p>
+    <p>MCP servers can be bundled into a plugin too, via a <code>.mcp.json</code> at the plugin root or an inline field in <code>plugin.json</code> — see Concept 03 for how MCP fits in. pr-buddy doesn't need one.</p>
+
+    <h2>// Test locally, then publish</h2>
+    <p>Before pr-buddy touches a marketplace, <code>claude --plugin-dir ./pr-buddy</code> loads it directly from a local path, and <code>/reload-plugins</code> picks up edits without restarting the session. A real local test pass runs in a fresh session and checks three things: the skill triggers on a realistic phrase, the agent is dispatchable, and — the part amateurs skip — a near-miss phrase that shouldn't trigger the skill doesn't.</p>
+    <p>Publishing has two moving parts: pr-buddy's own git repo, and a separate marketplace repo containing <code>.claude-plugin/marketplace.json</code> with a <code>name</code>, <code>owner</code>, and a <code>plugins</code> array pointing at pr-buddy's source. <code>/plugin marketplace add you/your-marketplace</code> followed by <code>/plugin install pr-buddy@your-marketplace</code> installs it from there. Once published, updates are gated by version, not by commits — pushing a fix without bumping <code>version</code> does nothing for anyone who already installed the prior version. Bumps follow semver: PATCH for a fix, MINOR for a new skill or agent, MAJOR for a breaking change to what's already there.</p>
+
+    <h2>// Pro vs. amateur</h2>
+    <p>Set <code>version</code> and start a changelog from day one — an unversioned plugin lets the commit SHA do the versioning silently, and a teammate's session can pick up a half-finished commit mid-edit. Test in a fresh session, not the one where the plugin was designed — that session already discussed the trigger phrase at length, which tells you nothing about whether a real user's request would have matched the description cold. Write the README for the human deciding whether to install pr-buddy; write the skill and agent descriptions for the model deciding whether to trigger them — one document trying to serve both jobs under-serves whichever reader shows up second. And start as a local <code>--plugin-dir</code> install, used in real PR reviews for a while, before it earns a marketplace entry — a week of real use surfaces the over-broad triggers a same-day publish never catches.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://code.claude.com/docs/en/plugins"><span class="src">Docs · Claude Code</span><span class="t">Create plugins</span></a>
+    <a class="ref" href="https://code.claude.com/docs/en/plugins-reference"><span class="src">Docs · Claude Code</span><span class="t">Plugins reference</span></a>
+    <a class="ref" href="https://code.claude.com/docs/en/plugin-marketplaces"><span class="src">Docs · Claude Code</span><span class="t">Create and distribute a plugin marketplace</span></a>
+    <a class="ref" href="https://code.claude.com/docs/en/best-practices"><span class="src">Docs · Claude Code</span><span class="t">Best practices for Claude Code</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="06-hooks-and-commands.html">← 06 · Hooks &amp; Commands</a>
+    <a class="next" href="08-claude-copilot-compat.html">08 · Claude ↔ Copilot Compat →</a>
+  </nav>
+</main>
+<script>
+const BLD = [
+  {n:"1 · SCAFFOLD", p:"pr-buddy/\n├── .claude-plugin/plugin.json\n├── skills/review-pr/SKILL.md\n└── agents/test-writer.md"},
+  {n:"2 · MANIFEST", p:'{\n  "name": "pr-buddy",\n  "version": "0.1.0",\n  "description": "PR review checklist + test-writing agent"\n}'},
+  {n:"3 · THE SKILL", p:"---\nname: review-pr\ndescription: Use when reviewing a pull request\n  or when asked to check a diff before merge.\n---\n1. Read the full diff first…\n2. Check tests exist for new branches…"},
+  {n:"4 · THE AGENT", p:"---\nname: test-writer\ndescription: Writes missing tests for a given file.\ntools: Read, Write, Bash\n---\nYou write focused tests. Deliverable: one\ntest file. Constraints: no new deps…"},
+  {n:"5 · TEST LOCALLY", p:"$ claude\n> /plugin install pr-buddy@local\n> “review this PR”\n✓ skill triggered · ✓ agent dispatchable\n✓ negative case: “fix typo” → no trigger"},
+  {n:"6 · PUBLISH", p:"$ git push origin main\n# marketplace repo: add entry to\n# .claude-plugin/marketplace.json\n> /plugin marketplace add you/your-marketplace\n> /plugin install pr-buddy@your-marketplace"},
+];
+let bi = 0;
+const ls = document.getElementById("bld-steps"), pane = document.getElementById("bld-pane"), ftB = document.getElementById("fig-ft");
+function drawB(){
+  ls.innerHTML = BLD.map((s,i) => `<li style="color:${i===bi?'#00c7fd':i<bi?'#dcdee0':'#4a4f55'}">${s.n}</li>`).join("");
+  pane.textContent = BLD[bi].p;
+  ftB.textContent = `STEP ${bi+1}/6 — SAME PATH FOR EVERY PLUGIN, WHATEVER IT BUNDLES`;
+}
+document.getElementById("bld-btn").addEventListener("click", () => { bi = (bi+1) % BLD.length; drawB(); });
+drawB();
+</script>
+</body>
+</html>
