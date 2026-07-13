@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · MCP Servers — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">A1 Index</a>
+    <a href="00-primer.html">00</a>
+    <a href="01-marketplaces.html">01</a>
+    <a href="02-plugins.html">02</a>
+    <a href="03-mcp-servers.html" class="on">03</a>
+    <a href="04-skills.html">04</a>
+    <a href="05-agents.html">05</a>
+    <a href="06-hooks-and-commands.html">06</a>
+    <a href="07-building-a-plugin.html">07</a>
+    <a href="08-claude-copilot-compat.html">08</a>
+    <a href="09-which-one-when.html">09</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module A1 / Concept 03</span>
+    <h1>MCP <span class="hl">Servers</span></h1>
+    <p class="sub">The Model Context Protocol is why one integration works in Claude, Copilot, and everything else — a universal port between models and the outside world.</p>
+    <div class="meta"><span>Read <b>9 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Concept 02</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> MCP HANDSHAKE / INTERACTIVE</span><span>CLIENT ↔ SERVER · SIMPLIFIED</span></div>
+    <div class="panel-body" id="fig">
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;color:#848a91;"><span>HARNESS / CLIENT</span><span>MCP SERVER</span></div>
+      <div id="mcp-log" style="margin-top:12px;display:flex;flex-direction:column;gap:6px;min-height:11em;"></div>
+      <button class="btn" id="mcp-btn" style="margin-top:14px;">Step ▸</button>
+    </div>
+    <div class="panel-ft" id="fig-ft">STEP THROUGH A SESSION: DISCOVERY, THEN A TOOL CALL</div>
+    <div class="figure-note">Simplified JSON-RPC; real messages carry ids, schemas, and error handling.</div>
+  </div>
+
+  <div class="prose">
+    <h2>// The N×M problem</h2>
+    <p>Every AI assistant that wants to reach an external tool used to need its own bespoke integration — a Claude adapter for GitHub, a different Copilot adapter for GitHub, another for Slack, another again. Wire up N assistants against M tools by hand and you're maintaining N×M brittle, one-off connectors. MCP replaces that with one protocol in the middle: "[t]hink of MCP like a USB-C port for AI applications" — a standardized way to connect AI applications to external systems, the same way USB-C standardizes how devices plug into each other. Build a server once, against the protocol, and it works with any client that also speaks it — that's already true of the ecosystem: Claude, ChatGPT, VS Code, Cursor, and more all support MCP.</p>
+
+    <h2>// Tools, resources, prompts</h2>
+    <p>The protocol defines a small, fixed vocabulary of what a server can offer: <b>tools</b> — functions the model itself decides to call, the same way any tool use works; <b>resources</b> — readable data (a file, a database row, a ticket) that the user or the model can pull into context, surfaced in Claude Code as <code>@server:protocol://resource/path</code> mentions; and <b>prompts</b> — templated workflows the <i>user</i> chooses to run, exposed as slash commands like <code>/mcp__servername__promptname</code>. The three-way split keeps the control boundary honest: the model decides tools, the user decides prompts, and resources just sit there as data for either to use. Three roles sit around this exchange — the <b>host</b> app (Claude Code, VS Code), a <b>client</b> connector inside it per server, and the <b>server</b> itself, all trading JSON-RPC 2.0 messages over a stateful, capability-negotiated connection.</p>
+
+    <h2>// Transports and config</h2>
+    <p>A server is reachable one of two ways. <b>stdio</b> spawns a local process and talks over standard input/output — no network — the fit for anything needing local filesystem access. <b>HTTP</b> (the spec calls it <code>streamable-http</code>) reaches a remote endpoint over the network like any web API; a WebSocket variant exists for servers that push events unprompted rather than just answer requests. Both harnesses in this module configure servers as JSON, with one field-name gotcha: Claude Code keys its <code>.mcp.json</code> under <code>mcpServers</code>, while VS Code's <code>.vscode/mcp.json</code> keys the identical idea under <code>servers</code>. A minimal Claude Code entry:</p>
+    <pre style="border:1px solid var(--line);padding:12px;font-family:var(--mono);font-size:.78rem;overflow-x:auto;">{
+  "mcpServers": {
+    "shared-server": { "command": "/path/to/server", "args": [], "env": {} }
+  }
+}</pre>
+    <p>and the VS Code equivalent:</p>
+    <pre style="border:1px solid var(--line);padding:12px;font-family:var(--mono);font-size:.78rem;overflow-x:auto;">{
+  "servers": {
+    "server-name": { "command": "npx", "args": ["-y", "@microsoft/mcp-server-playwright"] }
+  }
+}</pre>
+
+    <h2>// The interoperability layer</h2>
+    <p>Every other concept in this module — plugins, skills, agents, hooks — is scoped to one harness's own extension model. MCP is the piece explicitly designed not to be: a server written once against the protocol is the same process or endpoint whether Claude Code, Claude Desktop, or VS Code's Copilot Chat is connecting to it. Each harness's config file just points at it — that's the whole payoff of building once and integrating everywhere. Actually building a server is a task for the official SDKs, out of scope here beyond knowing they exist.</p>
+
+    <h2>// Pro vs. amateur</h2>
+    <p>Amateurs connect every server that looks useful; pros connect what the task needs — a connected server's tool descriptions compete for context-window space by default, whether or not the model ever calls them, which is exactly why Claude Code built a whole tool-search system to defer them. Amateurs treat tool results like any other text; pros treat them as untrusted input — a result is data from outside the conversation, and nothing stops it from containing instructions phrased to look like the user's. Amateurs write a server before checking if one exists; pros search first — a working server for a mainstream tool is usually an install command away, not a build task. And amateurs treat a local stdio server as a black box; pros know it's just a process running with their own permissions on their own machine — read what you install.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://modelcontextprotocol.io/"><span class="src">Docs · MCP</span><span class="t">Model Context Protocol — Home</span></a>
+    <a class="ref" href="https://modelcontextprotocol.io/specification/latest"><span class="src">Spec · MCP</span><span class="t">Specification (latest)</span></a>
+    <a class="ref" href="https://www.anthropic.com/news/model-context-protocol"><span class="src">Post · Anthropic</span><span class="t">Introducing the Model Context Protocol</span></a>
+    <a class="ref" href="https://code.claude.com/docs/en/mcp"><span class="src">Docs · Claude Code</span><span class="t">Connect Claude Code to tools via MCP</span></a>
+    <a class="ref" href="https://code.visualstudio.com/docs/copilot/chat/mcp-servers"><span class="src">Docs · VS Code</span><span class="t">Use MCP servers in VS Code</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="02-plugins.html">← 02 · Plugins: The Container</a>
+    <a class="next" href="04-skills.html">04 · Skills →</a>
+  </nav>
+</main>
+<script>
+const MSGS = [
+  {dir:">", t:"initialize — hello, what can you do?"},
+  {dir:"<", t:"capabilities: tools, resources"},
+  {dir:">", t:"tools/list"},
+  {dir:"<", t:'[{name:"query_db", description:"Run a read-only SQL query…"}]'},
+  {dir:">", t:'tools/call query_db {sql:"SELECT count(*) FROM users"}'},
+  {dir:"<", t:'result: {rows:[[48210]]} — fed back into the model’s context'},
+];
+let m = 0;
+const log = document.getElementById("mcp-log"), ftM = document.getElementById("fig-ft");
+document.getElementById("mcp-btn").addEventListener("click", () => {
+  if (m >= MSGS.length){ m = 0; log.innerHTML = ""; }
+  const x = MSGS[m];
+  log.innerHTML += `<div style="font-family:var(--mono);font-size:.76rem;text-align:${x.dir===">"?"left":"right"};color:${x.dir===">"?"#00c7fd":"#57b06a"}">${x.dir===">"?"→ ":""}${x.t}${x.dir==="<"?" ←":""}</div>`;
+  m++;
+  ftM.textContent = m===4 ? "TOOL DESCRIPTIONS NOW SIT IN THE MODEL'S CONTEXT — THAT'S THE COST" :
+                    m===MSGS.length ? "DONE — SAME PROTOCOL, ANY CLIENT, ANY SERVER" : `MESSAGE ${m}/${MSGS.length}`;
+});
+ftM.textContent = "STEP THROUGH A SESSION: DISCOVERY, THEN A TOOL CALL";
+</script>
+</body>
+</html>
