@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Skills — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">A1 Index</a>
+    <a href="00-primer.html">00</a>
+    <a href="01-marketplaces.html">01</a>
+    <a href="02-plugins.html">02</a>
+    <a href="03-mcp-servers.html">03</a>
+    <a href="04-skills.html" class="on">04</a>
+    <a href="05-agents.html">05</a>
+    <a href="06-hooks-and-commands.html">06</a>
+    <a href="07-building-a-plugin.html">07</a>
+    <a href="08-claude-copilot-compat.html">08</a>
+    <a href="09-which-one-when.html">09</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module A1 / Concept 04</span>
+    <h1><span class="hl">Skills</span>: Packaged Expertise</h1>
+    <p class="sub">A skill is a markdown file the model reads only when it needs it. The magic is progressive disclosure — and the entire API is one well-written description.</p>
+    <div class="meta"><span>Read <b>13 min</b></span><span>Level <b>Deep dive</b></span><span>Prereq <b>Concept 03</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> CONTEXT COST / INTERACTIVE</span><span>TOY BUDGET · 3 SKILLS INSTALLED</span></div>
+    <div class="panel-body" id="fig">
+      <div id="sk-bar" style="display:flex;height:34px;border:1px solid var(--line);overflow:hidden;"></div>
+      <div id="sk-leg" style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;color:var(--faint);"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+        <button class="btn" data-mode="start">Session start</button>
+        <button class="btn" data-mode="trigger">Trigger "review-pr"</button>
+        <button class="btn" data-mode="support">Load support file</button>
+        <button class="btn" data-mode="naive">Naive: load everything</button>
+      </div>
+    </div>
+    <div class="panel-ft" id="fig-ft">USED: <b>180 / 20000 TOKENS</b></div>
+    <div class="figure-note">Token numbers are illustrative; the three-level loading behavior is real.</div>
+  </div>
+
+  <div class="prose">
+    <h2>// A folder with instructions</h2>
+    <p>A skill is a directory with one required file, <code>SKILL.md</code>. It is not code the harness runs on your behalf — it's prose the model reads. An MCP server (Concept 03) exposes callable functions with typed schemas the harness invokes; a skill exposes a piece of text that becomes part of the model's own context, and the model reasons over it like any other instruction. The minimum legal skill is two YAML fields — <code>name</code> and <code>description</code> — plus a body. Everything else, from bundled scripts to elaborate reference directories, is optional scaffolding on top of that.</p>
+
+    <h2>// Progressive disclosure</h2>
+    <p>Progressive disclosure is why a project can carry dozens of installed skills without any of them costing meaningful context until one is actually relevant. It works in three levels. At session start, only each skill's <b>name</b> and <b>description</b> load — on the order of a hundred tokens per skill. When the model decides a skill is relevant, the full <b>body</b> loads, capped in practice under five thousand tokens. Support files referenced from the body — templates, datasets, scripts — load only when the body itself points at them, and cost effectively nothing until then because they're read from the filesystem, not carried in context by default. The figure above simulates exactly this: watch how little "session start" costs against how much "naive: load everything" costs for the same three skills.</p>
+
+    <h2>// The description is the API</h2>
+    <p>The model decides whether to load a skill's body from the description alone, before reading a line of the body. If the description doesn't communicate the trigger conditions precisely, the body never gets read — no matter how good it is. Write the description like a function signature for a caller who only sees the signature: trigger phrases, symptoms, "use when…" — not marketing copy. A description that only names the domain tells the model what a skill is about but not when, mid-conversation, to reach for it.</p>
+
+    <h2>// Writing the body</h2>
+    <p>Once triggered, the body enters the conversation as a single message and stays for the rest of the session — a one-way door, so it should earn the tokens it spends. Imperative voice, checklists, exact commands beat prose the model has to re-derive intent from. Keep the body itself short and move detailed reference material — the part only needed on rare edge cases — into separate files the body points at, so that material only loads on the sessions that actually need it. Skills can also bundle runnable scripts for the parts better handled by deterministic code than token generation; a script's source never enters context, only its output does when it runs.</p>
+
+    <h2>// Testing and failure modes</h2>
+    <p>A skill is prompt engineering, and it fails the way prompt engineering fails. A vague description never triggers. An over-broad one triggers everywhere, hijacking requests it was never meant for. A giant body bloats context for the rest of the session. Instructions that contradict CLAUDE.md leave the model resolving a contradiction mid-task. The fix is to test like software: run realistic prompts in a fresh session with the skill available and again with it disabled, and — the step amateurs skip — run near-miss prompts too, to confirm the skill stays silent on requests that only sound adjacent to its domain.</p>
+
+    <h2>// Pro vs. amateur</h2>
+    <p>Amateurs write skills like READMEs for a human skimming a folder. Pros write them as behavioral specs for a model deciding in one glance, at a hard character ceiling, with no chance to ask a clarifying question first. Amateurs polish the body and leave the description generic; pros know description quality dominates body quality, because a brilliant body that never triggers delivers nothing. Amateurs write a skill once and forget it; pros treat it as prompt engineering under version control, reviewed like any other code change, because its failure modes — mis-triggering, contradicting other instructions, silently bloating context — are real bugs. And amateurs stop testing once a skill fires on the prompts it's meant for; pros test the negative case, because an over-broad description passes every positive test while actively hijacking conversations it shouldn't touch.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" href="https://code.claude.com/docs/en/skills"><span class="src">Docs · Claude Code</span><span class="t">Extend Claude with Skills</span></a>
+    <a class="ref" href="https://claude.com/blog/skills"><span class="src">Blog · Anthropic</span><span class="t">Skills</span></a>
+    <a class="ref" href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills"><span class="src">Engineering · Anthropic</span><span class="t">Equipping agents for the real world with Agent Skills</span></a>
+    <a class="ref" href="https://github.com/anthropics/skills"><span class="src">GitHub · Anthropic</span><span class="t">anthropics/skills</span></a>
+    <a class="ref" href="https://platform.claude.com/docs/en/docs/agents-and-tools/agent-skills/overview"><span class="src">Docs · Anthropic</span><span class="t">Agent Skills overview</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="03-mcp-servers.html">← 03 · MCP Servers</a>
+    <a class="next" href="05-agents.html">05 · Agents →</a>
+  </nav>
+</main>
+<script>
+const CAP2 = 20000;
+const MODES = {
+  start:  {parts:{"SYSTEM PROMPT":2500,"SKILL METADATA (3 × ~60)":180}, msg:"3 SKILLS COST 180 TOKENS — NAMES AND DESCRIPTIONS ONLY"},
+  trigger:{parts:{"SYSTEM PROMPT":2500,"SKILL METADATA (3 × ~60)":180,"REVIEW-PR BODY":1400}, msg:"ONE BODY LOADED, ON DEMAND — THE OTHER TWO STAY FOLDED"},
+  support:{parts:{"SYSTEM PROMPT":2500,"SKILL METADATA (3 × ~60)":180,"REVIEW-PR BODY":1400,"CHECKLIST.MD (SUPPORT)":2200}, msg:"THIRD LEVEL: SUPPORT FILES LOAD ONLY WHEN THE BODY POINTS AT THEM"},
+  naive:  {parts:{"SYSTEM PROMPT":2500,"ALL 3 BODIES + SUPPORT FILES":11800}, msg:"WITHOUT PROGRESSIVE DISCLOSURE: EVERY SKILL, EVERY SESSION, EVERY TURN"},
+};
+const COLORS2 = ["#b06ad6","#00c7fd","#57b06a","#e08a3c","#4f9ee0"];
+const bar2 = document.getElementById("sk-bar"), leg2 = document.getElementById("sk-leg"), ft2 = document.getElementById("fig-ft");
+function show(mode){
+  const parts = Object.entries(MODES[mode].parts); let used = 0;
+  bar2.innerHTML = parts.map(([k,v],i) => { used += v;
+    return `<div title="${k}: ${v}" style="width:${v/CAP2*100}%;background:${COLORS2[i%5]}"></div>`; }).join("")
+    + `<div style="flex:1;background:#1a2027"></div>`;
+  leg2.innerHTML = parts.map(([k,v],i) =>
+    `<span><span style="display:inline-block;width:9px;height:9px;background:${COLORS2[i%5]};margin-right:6px"></span>${k} ${v}</span>`).join("");
+  ft2.innerHTML = `<b>${used} / ${CAP2} TOKENS</b> — ${MODES[mode].msg}`;
+}
+document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => show(b.dataset.mode)));
+show("start");
+</script>
+</body>
+</html>
