@@ -106,6 +106,30 @@ body.deck-mode .slide.on{display:flex;}
 
 <section class="slide" id="s-5">
   <span class="kicker">1 · Marketplace</span>
+  <h2>plugin.json — <span class="hl">the promise</span></h2>
+  <ul>
+    <li>The one file every plugin must have: what it claims to be, and what it says it ships</li>
+  </ul>
+  <pre>{
+  "name": "review-buddy",
+  "version": "1.2.0",
+  "description": "Reviews changes against the team checklist",
+  "author": { "name": "Platform Team" },
+  "commands": "./commands",
+  "skills": "./skills",
+  "agents": "./agents",
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json"
+}</pre>
+  <ul>
+    <li><code>name</code> + <code>version</code> are the marketplace's tracking handle — updates hang off these</li>
+    <li>The component paths declare what it has, before you open a single folder</li>
+    <li>Read it first: if the promise and the folder disagree, don't install</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-6">
+  <span class="kicker">1 · Marketplace</span>
   <h2>How consumption works</h2>
   <div class="steps">
     <div class="step"><b>1 · Add the marketplace.</b> Your harness fetches the catalog file. Metadata only.</div>
@@ -117,7 +141,7 @@ body.deck-mode .slide.on{display:flex;}
   </div>
 </section>
 
-<section class="slide" id="s-6">
+<section class="slide" id="s-7">
   <span class="kicker">2 · Components</span>
   <h2>Mental model: <span class="hl">harness</span> vs model</h2>
   <ul>
@@ -128,7 +152,7 @@ body.deck-mode .slide.on{display:flex;}
   </ul>
 </section>
 
-<section class="slide" id="s-7">
+<section class="slide" id="s-8">
   <span class="kicker">2 · Components</span>
   <h2>Commands — the <span class="hl">entry point</span></h2>
   <ul>
@@ -145,7 +169,7 @@ For diffs over 300 lines, dispatch the reviewer agent.
 Report findings ranked by severity, with file:line refs.</pre>
 </section>
 
-<section class="slide" id="s-8">
+<section class="slide" id="s-9">
   <span class="kicker">2 · Components</span>
   <h2>Skills — packaged <span class="hl">expertise</span></h2>
   <ul>
@@ -163,7 +187,7 @@ description: Team checklist for reviewing any code change
 3. Naming matches surrounding code …</pre>
 </section>
 
-<section class="slide" id="s-9">
+<section class="slide" id="s-10">
   <span class="kicker">2 · Components</span>
   <h2>MCP servers — the <span class="hl">hands</span></h2>
   <ul>
@@ -175,7 +199,7 @@ description: Team checklist for reviewing any code change
           ◀──(result)────           ◀──(data)───</pre>
 </section>
 
-<section class="slide" id="s-10">
+<section class="slide" id="s-11">
   <span class="kicker">2 · Components</span>
   <h2>Hooks — the <span class="hl">reflexes</span></h2>
   <ul>
@@ -188,7 +212,7 @@ description: Team checklist for reviewing any code change
                    "blocking": true } ] }</pre>
 </section>
 
-<section class="slide" id="s-11">
+<section class="slide" id="s-12">
   <span class="kicker">2 · Components</span>
   <h2>Agents — the <span class="hl">delegates</span> · all five in one run</h2>
   <ul>
@@ -204,7 +228,7 @@ description: Team checklist for reviewing any code change
   </div>
 </section>
 
-<section class="slide" id="s-12">
+<section class="slide" id="s-13">
   <span class="kicker">2 · Components</span>
   <h2>What each one <span class="hl">costs</span> in context</h2>
   <ul>
@@ -223,7 +247,7 @@ description: Team checklist for reviewing any code change
   </ul>
 </section>
 
-<section class="slide" id="s-13">
+<section class="slide" id="s-14">
   <span class="kicker">3 · When to use what</span>
   <h2>Pick by the job, not the buzzword</h2>
   <div class="pick">
@@ -240,7 +264,7 @@ description: Team checklist for reviewing any code change
   </div>
 </section>
 
-<section class="slide" id="s-14">
+<section class="slide" id="s-15">
   <span class="kicker">3 · When to use what</span>
   <h2>Why <code>review-buddy</code> is built this way</h2>
   <ul>
@@ -252,7 +276,7 @@ description: Team checklist for reviewing any code change
   </ul>
 </section>
 
-<section class="slide" id="s-15">
+<section class="slide" id="s-16">
   <span class="kicker">4 · Good practices</span>
   <h2>BKMs — building</h2>
   <ul>
@@ -264,7 +288,7 @@ description: Team checklist for reviewing any code change
   </ul>
 </section>
 
-<section class="slide" id="s-16">
+<section class="slide" id="s-17">
   <span class="kicker">4 · Good practices</span>
   <h2>BKMs — consuming &amp; trust</h2>
   <ul>
@@ -275,7 +299,7 @@ description: Team checklist for reviewing any code change
   </ul>
 </section>
 
-<section class="slide" id="s-17">
+<section class="slide" id="s-18">
   <span class="kicker">Recap</span>
   <h2>The five components, one line each</h2>
   <table>
@@ -288,7 +312,7 @@ description: Team checklist for reviewing any code change
   </table>
 </section>
 
-<section class="slide" id="s-18">
+<section class="slide" id="s-19">
   <span class="kicker">Q&amp;A</span>
   <h2>Questions — open floor</h2>
   <ul>
