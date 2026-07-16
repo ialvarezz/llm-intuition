@@ -18,6 +18,7 @@
 .slide th{font-family:var(--mono);color:var(--blue);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;}
 .tree{font-family:var(--mono);font-size:.9rem;line-height:1.8;max-width:70ch;}
 .tree summary{cursor:pointer;color:#dcdee0;list-style:none;}
+.tree summary::-webkit-details-marker{display:none;}
 .tree summary::before{content:"▸ ";color:var(--faint);}
 .tree details[open] summary::before{content:"▾ ";}
 .tree details[open] summary{color:var(--blue);}
@@ -87,17 +88,17 @@ body.deck-mode .slide.on{display:flex;}
   <h2>A plugin is a <span class="hl">folder</span> — open it up</h2>
   <div class="tree">
     <div>review-buddy/</div>
-    <details><summary>├ plugin.json</summary>
+    <details open><summary>├ plugin.json</summary>
       <div class="note">The nameplate: name, version, description. The only required file.</div></details>
-    <details><summary>├ commands/</summary>
+    <details open><summary>├ commands/</summary>
       <div class="note">Entry points a human types — <code>/review</code> expands to a prompt template.</div></details>
-    <details><summary>├ skills/</summary>
+    <details open><summary>├ skills/</summary>
       <div class="note">Packaged expertise the assistant loads on demand — the team's review checklist.</div></details>
-    <details><summary>├ agents/</summary>
+    <details open><summary>├ agents/</summary>
       <div class="note">Sub-assistants for delegated jobs — the <code>reviewer</code> that reads big diffs.</div></details>
-    <details><summary>├ hooks/</summary>
+    <details open><summary>├ hooks/</summary>
       <div class="note">Automatic triggers on events — run lint before any commit lands.</div></details>
-    <details><summary>└ .mcp.json</summary>
+    <details open><summary>└ .mcp.json</summary>
       <div class="note">Tool connections to external systems — fetch diffs from the repo host.</div></details>
   </div>
   <ul>
@@ -209,15 +210,15 @@ description: Team checklist for reviewing any code change
   <span class="kicker">3 · When to use what</span>
   <h2>Pick by the job, not the buzzword</h2>
   <div class="pick">
-    <details><summary>I want to run a repeatable task on demand…</summary>
+    <details open><summary>I want to run a repeatable task on demand…</summary>
       <div class="ans"><b>Command.</b> A human-triggered prompt template. Start here — it's the cheapest thing that works.</div></details>
-    <details><summary>I want to teach it my team's way of doing things…</summary>
+    <details open><summary>I want to teach it my team's way of doing things…</summary>
       <div class="ans"><b>Skill.</b> Knowledge gap → write it down once; the model loads it when relevant.</div></details>
-    <details><summary>I want to connect an external system…</summary>
+    <details open><summary>I want to connect an external system…</summary>
       <div class="ans"><b>MCP server.</b> Capability gap → the assistant can't reach what it has no tool for.</div></details>
-    <details><summary>I want a rule enforced every time, no exceptions…</summary>
+    <details open><summary>I want a rule enforced every time, no exceptions…</summary>
       <div class="ans"><b>Hook.</b> If "usually" isn't good enough, don't ask the model — trigger on the event.</div></details>
-    <details><summary>I want to delegate a bounded job without flooding my session…</summary>
+    <details open><summary>I want to delegate a bounded job without flooding my session…</summary>
       <div class="ans"><b>Agent.</b> Context pollution → give the job its own context and take back only the result.</div></details>
   </div>
 </section>
@@ -285,6 +286,7 @@ const slides = [...document.querySelectorAll(".slide")];
 const hud = document.getElementById("hud");
 let cur = Math.max(0, slides.findIndex(s => location.hash === "#"+s.id));
 document.body.classList.add("deck-mode");
+document.querySelectorAll(".slide details").forEach(d => d.removeAttribute("open"));
 function show(n){
   cur = Math.min(slides.length-1, Math.max(0, n));
   slides.forEach((s,i) => s.classList.toggle("on", i===cur));
@@ -305,7 +307,7 @@ addEventListener("keydown", e => {
   if (e.key==="ArrowRight"||e.key===" "||e.key==="PageDown"){ e.preventDefault(); fwd(); }
   if (e.key==="ArrowLeft"||e.key==="PageUp") back();
 });
-addEventListener("click", e => { if (!e.target.closest("a, details")) fwd(); });
+addEventListener("click", e => { if (!e.target.closest("a, details, #hud")) fwd(); });
 show(cur);
 </script>
 </body>
