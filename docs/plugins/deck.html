@@ -311,7 +311,7 @@ description: Team checklist for reviewing any code change
     <li>Text components (commands, skills, agents, hooks) don't change that boundary — they add instructions, not destinations</li>
     <li><b>MCP servers can widen it:</b> they send data to whatever system they connect to</li>
   </ul>
-  <pre>you ──▶ assistant ──▶ model provider   (sees everything in context)
+  <pre style="max-width:92ch">you ──▶ assistant ──▶ model provider   (sees everything in context)
               └──▶ MCP server ──▶ external system   (sees what the tool sends)</pre>
   <ul>
     <li>The audit question for any plugin: does it ship an MCP server, and where does that server point?</li>
