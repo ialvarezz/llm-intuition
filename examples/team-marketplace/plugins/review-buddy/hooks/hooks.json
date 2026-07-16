@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/lint-check.sh",
+            "if": "Bash(git commit*)",
+            "statusMessage": "Running lint before commit"
+          }
+        ]
+      }
+    ]
+  }
+}
