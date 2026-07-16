@@ -1,0 +1,406 @@
+# Plugin Deck v2 Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Replace `docs/plugins/deck.html` with a 17-slide vendor-neutral deck on plugin marketplaces, built around one running example plugin (`review-buddy`).
+
+**Architecture:** One self-contained HTML file. Native `<details>` elements provide the folder-tree and decision-picker interactivity (works with JS off). A small script (extended from the old deck's) adds deck-mode slide nav plus keypress step-throughs on slides 5 and 11. With JS disabled the file is a fully readable scroll page.
+
+**Tech Stack:** Plain HTML/CSS/JS, links existing `docs/style.css`. No dependencies.
+
+## Global Constraints
+
+- Vendor-neutral: no product names anywhere; say "AI assistant" and "harness".
+- Exactly 17 `<section class="slide">` elements.
+- All interactive content readable with JavaScript disabled (`<details>` is acceptable — native, no JS).
+- Reuse `docs/style.css` variables: `--bg --panel --line --blue --fg --muted --faint --mono --sans`.
+- Spec: `docs/superpowers/specs/2026-07-15-plugin-deck-v2-design.md`. Work on branch `plugin-deck-v2`.
+
+---
+
+### Task 1: Static deck content (all 17 slides)
+
+**Files:**
+- Modify: `docs/plugins/deck.html` (full replacement)
+
+**Interfaces:**
+- Produces: 17 `<section class="slide" id="s-N">` elements; `.step` items inside `.steps` containers on slides 5 and 11; `#hud` div present; no `<script>` yet (Task 2 adds it).
+
+- [ ] **Step 1: Replace the file with the complete static deck**
+
+Write `docs/plugins/deck.html` with exactly this content:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deck · Plugin Marketplaces — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+.slide{min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  padding:48px min(8vw,96px);border-bottom:1px solid var(--line);position:relative;z-index:1;}
+.slide h2{font-family:var(--mono);font-size:clamp(1.4rem,4vw,2.2rem);color:#f3f5f7;margin:0 0 18px;}
+.slide h2 .hl{color:var(--blue);}
+.slide ul{color:#adb3ba;line-height:1.9;font-size:1.05rem;max-width:62ch;}
+.slide .kicker{font-family:var(--mono);font-size:.68rem;letter-spacing:.22em;color:var(--blue);text-transform:uppercase;}
+.slide pre{background:var(--panel);border:1px solid var(--line);padding:16px;font-size:.85rem;overflow-x:auto;max-width:70ch;}
+.slide table{border-collapse:collapse;font-size:.85rem;max-width:80ch;}
+.slide th,.slide td{border:1px solid var(--line);padding:8px 12px;text-align:left;color:#adb3ba;}
+.slide th{font-family:var(--mono);color:var(--blue);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;}
+.tree{font-family:var(--mono);font-size:.9rem;line-height:1.8;max-width:70ch;}
+.tree summary{cursor:pointer;color:#dcdee0;list-style:none;}
+.tree summary::before{content:"▸ ";color:var(--faint);}
+.tree details[open] summary::before{content:"▾ ";}
+.tree details[open] summary{color:var(--blue);}
+.tree .note{color:var(--muted);padding:2px 0 6px 2ch;max-width:56ch;font-family:var(--sans);font-size:.9rem;}
+.steps{max-width:64ch;}
+.steps .step{color:#adb3ba;line-height:1.7;padding:6px 0 6px 14px;margin:4px 0;
+  border-left:2px solid var(--line);}
+.steps .step b{color:#f3f5f7;}
+body.deck-mode .steps .step{display:none;}
+body.deck-mode .steps .step.on{display:block;border-left-color:var(--blue);}
+.pick details{border:1px solid var(--line);margin:8px 0;max-width:64ch;background:var(--panel);}
+.pick summary{cursor:pointer;padding:10px 14px;font-family:var(--mono);font-size:.85rem;color:#dcdee0;}
+.pick summary:hover,.pick details[open] summary{color:var(--blue);}
+.pick .ans{padding:0 14px 12px;color:#adb3ba;line-height:1.6;}
+.pick .ans b{color:var(--blue);}
+body.deck-mode .slide{display:none;}
+body.deck-mode .slide.on{display:flex;}
+#hud{position:fixed;bottom:14px;right:20px;z-index:2;font-family:var(--mono);
+  font-size:.68rem;letter-spacing:.14em;color:var(--faint);}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<section class="slide" id="s-1">
+  <span class="kicker">Plugin marketplaces</span>
+  <h2>Plugin marketplaces — <span class="hl">anatomy</span> of an ecosystem</h2>
+  <ul>
+    <li>~45 minutes + open Q&amp;A</li>
+    <li>What a marketplace is · what's inside a plugin · when to use which part · good practices</li>
+    <li>Running example throughout: a code-review plugin called <code>review-buddy</code></li>
+  </ul>
+</section>
+
+<section class="slide" id="s-2">
+  <span class="kicker">Why this matters</span>
+  <h2>Stop re-pasting the same prompt</h2>
+  <ul>
+    <li>Everyone keeps a private stash of prompts — copied, drifted, unversioned</li>
+    <li>A plugin turns that stash into a named, versioned, reviewable artifact</li>
+    <li>A marketplace is how a team shares those artifacts</li>
+    <li><b>Promise:</b> by the end, you can read any plugin like a datasheet</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-3">
+  <span class="kicker">1 · Marketplace</span>
+  <h2>A <span class="hl">catalog</span>, not a store</h2>
+  <ul>
+    <li>A marketplace is one metadata file — a list of pointers, no hosted code</li>
+    <li>Plugins themselves live in git repos, URLs, or local folders</li>
+    <li>It buys you discovery, version tracking, and updates</li>
+  </ul>
+  <pre>{
+  "name": "team-marketplace",
+  "owner": { "name": "Platform Team" },
+  "plugins": [
+    { "name": "review-buddy",
+      "source": "https://git.example.com/tools/review-buddy",
+      "version": "1.2.0" }
+  ]
+}</pre>
+</section>
+
+<section class="slide" id="s-4">
+  <span class="kicker">1 · Marketplace</span>
+  <h2>A plugin is a <span class="hl">folder</span> — open it up</h2>
+  <div class="tree">
+    <div>review-buddy/</div>
+    <details><summary>├ plugin.json</summary>
+      <div class="note">The nameplate: name, version, description. The only required file.</div></details>
+    <details><summary>├ commands/</summary>
+      <div class="note">Entry points a human types — <code>/review</code> expands to a prompt template.</div></details>
+    <details><summary>├ skills/</summary>
+      <div class="note">Packaged expertise the assistant loads on demand — the team's review checklist.</div></details>
+    <details><summary>├ agents/</summary>
+      <div class="note">Sub-assistants for delegated jobs — the <code>reviewer</code> that reads big diffs.</div></details>
+    <details><summary>├ hooks/</summary>
+      <div class="note">Automatic triggers on events — run lint before any commit lands.</div></details>
+    <details><summary>└ .mcp.json</summary>
+      <div class="note">Tool connections to external systems — fetch diffs from the repo host.</div></details>
+  </div>
+  <ul>
+    <li>Types you'll meet: single-purpose (one command), toolkit (many components), pure-config (just connections)</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-5">
+  <span class="kicker">1 · Marketplace</span>
+  <h2>How consumption works</h2>
+  <div class="steps">
+    <div class="step"><b>1 · Add the marketplace.</b> Your harness fetches the catalog file. Metadata only.</div>
+    <div class="step"><b>2 · Browse.</b> You search names and descriptions. Still nothing downloaded.</div>
+    <div class="step"><b>3 · Install.</b> The plugin's files are copied to your machine.</div>
+    <div class="step"><b>4 · Nothing runs yet.</b> It's text files on disk. You can open and read every one.</div>
+    <div class="step"><b>5 · Session start.</b> The harness loads commands, skills, and agents into the assistant's context, and starts any MCP servers.</div>
+    <div class="step"><b>6 · Updates.</b> A version bump in the catalog is how you're offered the new release.</div>
+  </div>
+</section>
+
+<section class="slide" id="s-6">
+  <span class="kicker">2 · Components</span>
+  <h2>Mental model: <span class="hl">harness</span> vs model</h2>
+  <ul>
+    <li>The <b>model</b>: fixed weights that predict text. It never changes when you install anything.</li>
+    <li>The <b>harness</b>: the application around it — executes tools, injects context, enforces rules</li>
+    <li>Every plugin component extends the harness, never the model</li>
+    <li>Keep this; it answers most "but how does it learn…" questions — it doesn't</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-7">
+  <span class="kicker">2 · Components</span>
+  <h2>Commands — the <span class="hl">entry point</span></h2>
+  <ul>
+    <li>A human types it; it expands into a prompt template — nothing more</li>
+    <li>Cheapest component: deterministic start, zero standing cost</li>
+  </ul>
+  <pre>commands/review.md
+---
+description: Review a change against the team checklist
+---
+Review the current diff.
+Use the review-checklist skill.
+For diffs over 300 lines, dispatch the reviewer agent.
+Report findings ranked by severity, with file:line refs.</pre>
+</section>
+
+<section class="slide" id="s-8">
+  <span class="kicker">2 · Components</span>
+  <h2>Skills — packaged <span class="hl">expertise</span></h2>
+  <ul>
+    <li>A markdown file of know-how the assistant pulls in <b>when relevant</b></li>
+    <li>Only the one-line description is always loaded; the body loads on demand — context stays lean</li>
+    <li>Contrast with commands: a human invokes a command; the <b>model</b> reaches for a skill</li>
+  </ul>
+  <pre>skills/review-checklist/SKILL.md
+---
+name: review-checklist
+description: Team checklist for reviewing any code change
+---
+1. Does the change do what the description claims?
+2. Error paths: what happens on bad input?
+3. Naming matches surrounding code …</pre>
+</section>
+
+<section class="slide" id="s-9">
+  <span class="kicker">2 · Components</span>
+  <h2>MCP servers — the <span class="hl">hands</span></h2>
+  <ul>
+    <li>A standard protocol for giving the assistant tools that touch real systems</li>
+    <li><code>review-buddy</code> uses one to <code>fetch_diff</code> and <code>post_comment</code> on the repo host</li>
+    <li>The only component that is <b>running code</b>, not text — remember that at install time</li>
+  </ul>
+  <pre>assistant ──(tool call)──▶ MCP server ──(API)──▶ repo host
+          ◀──(result)────           ◀──(data)───</pre>
+</section>
+
+<section class="slide" id="s-10">
+  <span class="kicker">2 · Components</span>
+  <h2>Hooks — the <span class="hl">reflexes</span></h2>
+  <ul>
+    <li>Event → shell command. Deterministic. No model judgment involved.</li>
+    <li><code>review-buddy</code>: before any commit, run the linter; block on failure</li>
+    <li>Every other component <b>advises</b> the model; a hook <b>constrains</b> it</li>
+  </ul>
+  <pre>hooks/hooks.json
+{ "PreCommit": [ { "command": "lint --strict",
+                   "blocking": true } ] }</pre>
+</section>
+
+<section class="slide" id="s-11">
+  <span class="kicker">2 · Components</span>
+  <h2>Agents — the <span class="hl">delegates</span> · all five in one run</h2>
+  <ul>
+    <li>A sub-assistant with its own instructions, own context, limited tools — spawned for a bounded job, reports back</li>
+  </ul>
+  <div class="steps">
+    <div class="step"><b>1 · Human:</b> <code>/review</code> — the <b>command</b> expands into the instruction prompt.</div>
+    <div class="step"><b>2 · Spawn:</b> the diff is 800 lines, so the assistant dispatches the <b>agent</b> — your session stays clean.</div>
+    <div class="step"><b>3 · Fetch:</b> the agent calls the <b>MCP server</b>'s <code>fetch_diff</code> tool.</div>
+    <div class="step"><b>4 · Judge:</b> the <b>skill</b>'s checklist guides what the agent looks for.</div>
+    <div class="step"><b>5 · Report:</b> findings come back ranked; you approve a fix.</div>
+    <div class="step"><b>6 · Gate:</b> the fix is committed — the <b>hook</b> runs lint before it lands.</div>
+  </div>
+</section>
+
+<section class="slide" id="s-12">
+  <span class="kicker">3 · When to use what</span>
+  <h2>Pick by the job, not the buzzword</h2>
+  <div class="pick">
+    <details><summary>I want to run a repeatable task on demand…</summary>
+      <div class="ans"><b>Command.</b> A human-triggered prompt template. Start here — it's the cheapest thing that works.</div></details>
+    <details><summary>I want to teach it my team's way of doing things…</summary>
+      <div class="ans"><b>Skill.</b> Knowledge gap → write it down once; the model loads it when relevant.</div></details>
+    <details><summary>I want to connect an external system…</summary>
+      <div class="ans"><b>MCP server.</b> Capability gap → the assistant can't reach what it has no tool for.</div></details>
+    <details><summary>I want a rule enforced every time, no exceptions…</summary>
+      <div class="ans"><b>Hook.</b> If "usually" isn't good enough, don't ask the model — trigger on the event.</div></details>
+    <details><summary>I want to delegate a bounded job without flooding my session…</summary>
+      <div class="ans"><b>Agent.</b> Context pollution → give the job its own context and take back only the result.</div></details>
+  </div>
+</section>
+
+<section class="slide" id="s-13">
+  <span class="kicker">3 · When to use what</span>
+  <h2>Why <code>review-buddy</code> is built this way</h2>
+  <ul>
+    <li>Checklist as a command instead of a skill? It would bloat <b>every</b> review prompt — skills load on demand</li>
+    <li>Lint as a skill instead of a hook? The model might skip it — a hook can't be skipped</li>
+    <li>Pasting diffs instead of MCP? Stale and manual — the tool fetches live state</li>
+    <li>Reviewing inline instead of an agent? An 800-line diff floods the session that asked for it</li>
+    <li>Each component earns its place by what breaks without it</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-14">
+  <span class="kicker">4 · Good practices</span>
+  <h2>BKMs — building</h2>
+  <ul>
+    <li>Start with a command; add components only when the cheaper one demonstrably fails</li>
+    <li>Escalation ladder: plain prompt → command → skill → agent / MCP</li>
+    <li>Keep skills short — every loaded token competes with the actual task</li>
+    <li>One plugin = one job. Split toolkits that try to do everything</li>
+    <li>Bump the version deliberately — pushing commits alone updates nobody</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-15">
+  <span class="kicker">4 · Good practices</span>
+  <h2>BKMs — consuming &amp; trust</h2>
+  <ul>
+    <li>Read before you install — plugins are text files, so audit them like a code review</li>
+    <li>Exception: MCP servers <b>run code</b> — treat them like any third-party dependency</li>
+    <li>Pin versions for anything your team relies on</li>
+    <li>Context is a budget: every installed plugin competes for the same working memory — uninstall what stopped earning its place</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-16">
+  <span class="kicker">Recap</span>
+  <h2>The five components, one line each</h2>
+  <table>
+    <tr><th>Component</th><th>What it is</th><th>Who triggers it</th><th>In review-buddy</th></tr>
+    <tr><td>Command</td><td>Prompt template</td><td>Human</td><td><code>/review</code></td></tr>
+    <tr><td>Skill</td><td>On-demand expertise</td><td>Model</td><td>Review checklist</td></tr>
+    <tr><td>MCP server</td><td>Tools to real systems</td><td>Model (via harness)</td><td>Fetch diff, post comment</td></tr>
+    <tr><td>Hook</td><td>Event → command</td><td>Event, always</td><td>Lint before commit</td></tr>
+    <tr><td>Agent</td><td>Delegated sub-assistant</td><td>Model or human</td><td>The reviewer</td></tr>
+  </table>
+</section>
+
+<section class="slide" id="s-17">
+  <span class="kicker">Q&amp;A</span>
+  <h2>Questions — open floor</h2>
+  <ul>
+    <li>Deeper reading: the ten concept pages at <a href="index.html">plugins/index.html</a></li>
+    <li>marketplace catalog → plugin folder → command · skill · MCP · hook · agent</li>
+  </ul>
+</section>
+
+<div id="hud"></div>
+</body>
+</html>
+```
+
+- [ ] **Step 2: Verify structure**
+
+Run:
+```bash
+grep -c '<section class="slide"' docs/plugins/deck.html
+grep -c 'class="step"' docs/plugins/deck.html
+grep -ciE 'claude|copilot|anthropic|openai|gemini' docs/plugins/deck.html
+```
+Expected: `17`, `12`, `0` (vendor-neutral check; grep exits 1 on the zero — that's the pass).
+
+- [ ] **Step 3: Verify rendering with JS disabled semantics**
+
+Open `docs/plugins/deck.html` in a browser (`open docs/plugins/deck.html`). There is no script yet, so this IS the no-JS view. Expected: all 17 slides scroll vertically, all step-through steps visible, `<details>` entries expand on click, table renders with hairline borders.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add docs/plugins/deck.html
+git commit -m "feat(deck): plugin deck v2 — 17 static slides, review-buddy example"
+```
+
+---
+
+### Task 2: Deck-mode navigation and step-through script
+
+**Files:**
+- Modify: `docs/plugins/deck.html` (insert `<script>` before `</body>`)
+
+**Interfaces:**
+- Consumes: `.slide` sections, `.step` elements, `#hud` from Task 1.
+- Produces: keyboard/click deck navigation; steps reveal one per keypress before the slide advances.
+
+- [ ] **Step 1: Add the script**
+
+Insert immediately after `<div id="hud"></div>`:
+
+```html
+<script>
+const slides = [...document.querySelectorAll(".slide")];
+const hud = document.getElementById("hud");
+let cur = Math.max(0, slides.findIndex(s => location.hash === "#"+s.id));
+document.body.classList.add("deck-mode");
+function show(n){
+  cur = Math.min(slides.length-1, Math.max(0, n));
+  slides.forEach((s,i) => s.classList.toggle("on", i===cur));
+  hud.textContent = `${cur+1} / ${slides.length} · ←→`;
+  if (slides[cur].id) history.replaceState(null,"","#"+slides[cur].id);
+}
+function fwd(){
+  const next = slides[cur].querySelector(".step:not(.on)");
+  if (next){ next.classList.add("on"); return; }
+  show(cur+1);
+}
+function back(){
+  const shown = slides[cur].querySelectorAll(".step.on");
+  if (shown.length){ shown[shown.length-1].classList.remove("on"); return; }
+  show(cur-1);
+}
+addEventListener("keydown", e => {
+  if (e.key==="ArrowRight"||e.key===" "||e.key==="PageDown"){ e.preventDefault(); fwd(); }
+  if (e.key==="ArrowLeft"||e.key==="PageUp") back();
+});
+addEventListener("click", e => { if (!e.target.closest("a, details")) fwd(); });
+show(cur);
+</script>
+```
+
+- [ ] **Step 2: Verify deck behavior in browser**
+
+Open `docs/plugins/deck.html`. Expected, in order:
+1. Only slide 1 visible; HUD shows `1 / 17 · ←→`.
+2. Arrow-right to slide 5: the six steps are hidden; each arrow-right reveals one (blue left border); the seventh arrow-right advances to slide 6.
+3. Arrow-left on slide 6 returns to slide 5 with all steps still revealed; further arrow-lefts un-reveal them one at a time.
+4. Same reveal behavior on slide 11.
+5. On slides 4 and 12, clicking a `<details>` row expands it WITHOUT advancing the slide; clicking empty slide area still advances.
+6. Refresh at `#s-9` lands on slide 9.
+
+- [ ] **Step 3: Verify no-JS fallback still intact**
+
+Disable JavaScript in the browser and reload. Expected: all slides and all steps visible again, since hiding is gated on the JS-added `deck-mode` class. (Sanity via grep: every `display:none` rule in the file must be prefixed `body.deck-mode` — `grep -c 'display:none' docs/plugins/deck.html` equals `grep -c 'body.deck-mode' docs/plugins/deck.html` minus the two `.slide` visibility rules; simplest is the browser check.)
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add docs/plugins/deck.html
+git commit -m "feat(deck): deck-mode nav with per-step reveal on slides 5 and 11"
+```
