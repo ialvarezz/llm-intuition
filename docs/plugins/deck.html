@@ -335,7 +335,7 @@ document.querySelectorAll(".slide details").forEach(d => d.removeAttribute("open
 function show(n){
   cur = Math.min(slides.length-1, Math.max(0, n));
   slides.forEach((s,i) => s.classList.toggle("on", i===cur));
-  hud.textContent = `${cur+1} / ${slides.length} · ←→ · esc`;
+  hud.textContent = `${cur+1} / ${slides.length} · ←→`;
   if (slides[cur].id) history.replaceState(null,"","#"+slides[cur].id);
 }
 function fwd(){
@@ -349,19 +349,10 @@ function back(){
   show(cur-1);
 }
 addEventListener("keydown", e => {
-  if (e.key==="Escape"){
-    const on = document.body.classList.toggle("deck-mode");
-    if (on){ show(cur); } else { hud.textContent = "esc → deck"; slides[cur].scrollIntoView(); }
-    return;
-  }
-  if (!document.body.classList.contains("deck-mode")) return;
   if (e.key==="ArrowRight"||e.key===" "||e.key==="PageDown"){ e.preventDefault(); fwd(); }
   if (e.key==="ArrowLeft"||e.key==="PageUp") back();
 });
-addEventListener("click", e => {
-  if (!document.body.classList.contains("deck-mode")) return;
-  if (!e.target.closest("a, details, #hud")) fwd();
-});
+addEventListener("click", e => { if (!e.target.closest("a, details, #hud")) fwd(); });
 show(cur);
 </script>
 </body>
