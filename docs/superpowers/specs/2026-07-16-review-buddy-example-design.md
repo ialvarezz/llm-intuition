@@ -49,7 +49,7 @@ examples/team-marketplace/
 ## Component contents (spirit, not verbatim)
 
 - **marketplace.json** — mirrors the slide-3 JSON but with a working relative `source` path so `/plugin marketplace add` on the directory actually resolves the plugin.
-- **plugin.json** — `name: "review-buddy"`, `description`, `version: "1.2.0"`, `author: { name: "Platform Team" }`.
+- **plugin.json** — `name: "review-buddy"`, `description`, `version: "1.2.0"`, `author: { name: "Platform Team" }`, plus explicit component-path fields (`commands`, `skills`, `agents`, `hooks`, `mcpServers`) mirroring the default layout — redundant by convention, included as a best-practice showcase of the full manifest schema.
 - **commands/review.md** — short prompt template; demonstrates "entry points a human types."
 - **skills/review-checklist/SKILL.md** — base Agent Skills spec only (`name`, `description` frontmatter + Markdown body); no Claude-specific extended fields, keeping it portable per concept 08.
 - **agents/reviewer.md** — minimal frontmatter plus a focused system prompt; read-only tool list.
