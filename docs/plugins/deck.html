@@ -280,5 +280,33 @@ description: Team checklist for reviewing any code change
 </section>
 
 <div id="hud"></div>
+<script>
+const slides = [...document.querySelectorAll(".slide")];
+const hud = document.getElementById("hud");
+let cur = Math.max(0, slides.findIndex(s => location.hash === "#"+s.id));
+document.body.classList.add("deck-mode");
+function show(n){
+  cur = Math.min(slides.length-1, Math.max(0, n));
+  slides.forEach((s,i) => s.classList.toggle("on", i===cur));
+  hud.textContent = `${cur+1} / ${slides.length} · ←→`;
+  if (slides[cur].id) history.replaceState(null,"","#"+slides[cur].id);
+}
+function fwd(){
+  const next = slides[cur].querySelector(".step:not(.on)");
+  if (next){ next.classList.add("on"); return; }
+  show(cur+1);
+}
+function back(){
+  const shown = slides[cur].querySelectorAll(".step.on");
+  if (shown.length){ shown[shown.length-1].classList.remove("on"); return; }
+  show(cur-1);
+}
+addEventListener("keydown", e => {
+  if (e.key==="ArrowRight"||e.key===" "||e.key==="PageDown"){ e.preventDefault(); fwd(); }
+  if (e.key==="ArrowLeft"||e.key==="PageUp") back();
+});
+addEventListener("click", e => { if (!e.target.closest("a, details")) fwd(); });
+show(cur);
+</script>
 </body>
 </html>
