@@ -304,6 +304,37 @@ description: Team checklist for reviewing any code change
 </section>
 
 <section class="slide" id="s-18">
+  <span class="kicker">4 · Good practices</span>
+  <h2>Where does your <span class="hl">data</span> go?</h2>
+  <ul>
+    <li>Everything in context goes to the model provider: your prompt, the diff, loaded skill bodies</li>
+    <li>Text components (commands, skills, agents, hooks) don't change that boundary — they add instructions, not destinations</li>
+    <li><b>MCP servers can widen it:</b> they send data to whatever system they connect to</li>
+  </ul>
+  <pre>you ──▶ assistant ──▶ model provider   (sees everything in context)
+              └──▶ MCP server ──▶ external system   (sees what the tool sends)</pre>
+  <ul>
+    <li>The audit question for any plugin: does it ship an MCP server, and where does that server point?</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-19">
+  <span class="kicker">Contribute</span>
+  <h2>Publishing is a <span class="hl">pull request</span></h2>
+  <ul>
+    <li>A plugin is just a git repo — no build system, no packaging step</li>
+    <li>Publishing = one entry added to the marketplace catalog</li>
+  </ul>
+  <pre>+ { "name": "your-plugin",
++   "source": "https://git.example.com/you/your-plugin",
++   "version": "0.1.0" }</pre>
+  <ul>
+    <li>A version bump is a release — teammates get offered the update</li>
+    <li>Start small: one command that saves your team ten minutes is a worthy plugin</li>
+  </ul>
+</section>
+
+<section class="slide" id="s-20">
   <span class="kicker">Recap</span>
   <h2>The five components, one line each</h2>
   <table>
@@ -316,7 +347,7 @@ description: Team checklist for reviewing any code change
   </table>
 </section>
 
-<section class="slide" id="s-19">
+<section class="slide" id="s-21">
   <span class="kicker">Q&amp;A</span>
   <h2>Questions — open floor</h2>
   <ul>
