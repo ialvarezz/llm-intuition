@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>09 · Which One, When — llm::intuition</title>
 <link rel="stylesheet" href="../style.css">
+<style>
+.prose table{border-collapse:collapse;font-size:.85rem;margin:14px 0;}
+.prose th,.prose td{border:1px solid var(--line);padding:8px 12px;text-align:left;color:var(--muted);line-height:1.5;}
+.prose th{font-family:var(--mono);color:var(--blue);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;}
+</style>
 </head>
 <body>
 <div class="grid-bg"></div>
@@ -30,7 +35,7 @@
     <span class="crumb">Module A1 / Concept 09</span>
     <h1>Which One, <span class="hl">When</span></h1>
     <p class="sub">Skill, MCP server, agent, hook, command, or just a prompt? Start from the failure mode you're fixing — the right artifact falls out.</p>
-    <div class="meta"><span>Read <b>8 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Concept 08</b></span></div>
+    <div class="meta"><span>Read <b>9 min</b></span><span>Level <b>Fundamentals</b></span><span>Prereq <b>Concept 08</b></span></div>
   </div>
 
   <div class="panel">
@@ -52,6 +57,18 @@
     <p>A plugin usually isn't one artifact from this list — it's a bundle. A real plugin might ship a skill that teaches the procedure, a hook that guarantees a linter runs before every commit regardless of whether the model remembers, and a command that gives a human a fast manual trigger. The framework above answers "which artifact for which failure," not "which single artifact for this plugin" — most plugins answer several of the six questions at once, one artifact per failure mode they cover.</p>
     <p>Every artifact installed is also something somebody now owns. Descriptions drift — the goal is "the _smallest_ _possible_ set of high-signal tokens that maximize the likelihood of some desired outcome" [S4], and a stale description misleads the model about when to invoke the thing, it doesn't just waste tokens. Docs-linked instructions rot the moment the thing they reference moves, with no error to signal it. And someone must own each artifact — hook, skill, or MCP server is infrastructure with the same lifecycle as code: a person has to notice when it breaks, update it, or retire it.</p>
 
+    <h2>The context footprint</h2>
+    <p>Cost has a second axis: where each artifact sits in the model's input. There are three places a component can live — the <b>system prompt</b> (re-sent on every request), the <b>conversation</b> (entered once, at a point in time), or <b>outside the model entirely</b>. Skills split across the first two: name and description sit in the system prompt from startup — roughly a hundred tokens per skill — and when one is invoked, "the rendered <code>SKILL.md</code> content enters the conversation as a single message and stays there for the rest of the session" [S1]. Commands are the user-invocable face of the same format, so they carry the same level-1 metadata; the difference is that the expanded body arrives <i>as the prompt itself</i>, billed once per invocation. MCP tools used to be the heaviest standing cost — every tool's name, description, and full input schema loaded up front — but "tool search is enabled by default. MCP tools are deferred rather than loaded into context upfront &hellip; Only the tools Claude actually uses enter context" [S5]; each result then enters the conversation, capped at 25,000 tokens by default. Hooks cost nothing standing: they run in the harness, outside the model, and only their injected output — <code>additionalContext</code>, or stdout on exit 0 for events like <code>SessionStart</code> and <code>UserPromptSubmit</code> — ever enters context [S2]. A subagent costs one listing entry plus the dispatch and the report; everything in between spends the subagent's own window, which is the point (concept 05).</p>
+    <table>
+      <tr><th>Artifact</th><th>Always in context</th><th>Enters on use</th></tr>
+      <tr><td>Skill</td><td>name + description (system prompt)</td><td>full body, once, for the session</td></tr>
+      <tr><td>Command</td><td>name + description (system prompt)</td><td>expanded body as the prompt</td></tr>
+      <tr><td>MCP server</td><td>~nothing (deferred by default)</td><td>used tool schemas + each result</td></tr>
+      <tr><td>Hook</td><td>nothing — runs outside the model</td><td>only injected output, when it fires</td></tr>
+      <tr><td>Agent</td><td>one listing entry</td><td>dispatch + final report only</td></tr>
+    </table>
+    <p>The placement answers whether things "fade." System-prompt metadata never does — it's re-sent every turn and survives compaction by construction. Conversation content has no privileged status: an instruction injected a hundred thousand tokens ago competes with everything since, and when the window fills and the transcript is compacted, injected bodies can be reduced to a summary line. Claude Code special-cases skills here — it "carries invoked skills forward within a token budget," re-attaching the most recent invocation of each after the summary and "keeping the first 5,000 tokens of each" [S1]. For everything else, the escape hatch is a hook: a <code>SessionStart</code> hook with the <code>compact</code> matcher can re-inject critical context after compaction [S2].</p>
+
     <h2>Escalate on evidence</h2>
     <p>Pros pick the cheapest artifact that fixes the failure mode, and escalate only on evidence: prompt → command → skill → agent/MCP. Each step up is only justified once the cheaper step has been tried and demonstrably fails — "you should consider adding complexity _only_ when it demonstrably improves outcomes" [S3]. They also measure the context cost of what they install: every tool description, injected instruction, and retrieved snippet sits in the same bounded context window and gets billed as input tokens whether the model uses it or not — the discipline is keeping that budget "informative, yet tight" [S4].</p>
 
@@ -64,6 +81,7 @@
     <a class="ref" href="https://code.claude.com/docs/en/hooks-guide"><span class="src">Docs · Claude</span><span class="t">Automate actions with hooks</span></a>
     <a class="ref" href="https://www.anthropic.com/research/building-effective-agents"><span class="src">Post · Anthropic</span><span class="t">Building Effective Agents</span></a>
     <a class="ref" href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"><span class="src">Post · Anthropic</span><span class="t">Effective context engineering for AI agents</span></a>
+    <a class="ref" href="https://code.claude.com/docs/en/mcp"><span class="src">Docs · Claude</span><span class="t">Connect Claude Code to tools via MCP</span></a>
   </div>
 
   <nav class="pager">
