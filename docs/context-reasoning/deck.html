@@ -198,6 +198,64 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
+<section class="slide" id="s-7">
+  <span class="kicker">3 · Attention curve</span>
+  <h2>In the window isn't the same as <span class="hl">seen</span></h2>
+  <svg id="dk-rc-svg" viewBox="0 0 520 200" style="max-width:520px;"></svg>
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+    <button class="btn" data-p="0">Start</button>
+    <button class="btn" data-p="1">Early</button>
+    <button class="btn" data-p="2">Middle</button>
+    <button class="btn" data-p="3">Late</button>
+    <button class="btn" data-p="4">End</button>
+  </div>
+  <div id="dk-rc-msg" style="margin-top:10px;color:var(--muted);font-size:.85rem;"></div>
+  <script>
+  (function(){
+    const POINTS=[[40,95,"START"],[150,72,"EARLY"],[260,48,"MIDDLE"],[370,74,"LATE"],[480,96,"END"]];
+    const CURVE="M40,55 C120,140 200,175 260,182 C320,175 400,140 480,54";
+    const svg=document.getElementById("dk-rc-svg"), msg=document.getElementById("dk-rc-msg");
+    function render(sel){
+      svg.innerHTML=`<path d="${CURVE}" fill="none" stroke="#0068b5" stroke-width="2"/>`+
+        POINTS.map(([x,r],i)=>{const y=200-r*1.5; const on=i===sel;
+          return `<circle cx="${x}" cy="${y}" r="${on?7:4}" fill="${on?'#00c7fd':'#0068b5'}"/>`;}).join("");
+      msg.textContent = sel==null ? "Click a position to read its recall rate." :
+        `Position "${POINTS[sel][2]}" — ~${POINTS[sel][1]}% recall (Liu et al. 2023, illustrative curve).`;
+    }
+    document.querySelectorAll("[data-p]").forEach(b=>b.addEventListener("click",()=>render(+b.dataset.p)));
+    render(null);
+  })();
+  </script>
+</section>
+
+<section class="slide" id="s-8">
+  <span class="kicker">3 · Attention curve</span>
+  <h2>Why position <span class="hl">mechanically</span> matters</h2>
+  <div id="dk-att-toks" style="display:flex;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:.85rem;"></div>
+  <div id="dk-att-bars" style="margin-top:14px;display:flex;flex-direction:column;gap:5px;"></div>
+  <button class="btn" id="dk-att-btn" style="margin-top:14px;">Next token ▸</button>
+  <script>
+  (function(){
+    const TOKS=["The","robot","picked","up","the","ball","because","it","was","light"];
+    const ATT={1:[100],2:[10,90],3:[5,25,70],4:[40,10,25,25],5:[15,10,30,15,30],
+      6:[5,10,25,5,10,45],7:[3,12,5,2,3,62,13],8:[4,10,6,2,4,20,10,44],9:[2,6,4,2,2,38,8,30,8]};
+    let cur=1;
+    const t=document.getElementById("dk-att-toks"), b=document.getElementById("dk-att-bars"),
+          btn=document.getElementById("dk-att-btn");
+    function draw(){
+      t.innerHTML=TOKS.map((tok,i)=>`<span style="padding:3px 7px;border:1px solid ${i===cur?'#00c7fd':'#263039'};
+        color:${i===cur?'#00c7fd':i<cur?'#dcdee0':'#4a4f55'}">${tok}</span>`).join("");
+      b.innerHTML=ATT[cur].map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.75rem;">
+        <span style="width:70px;color:var(--faint)">${TOKS[i]}</span>
+        <span style="height:10px;width:${p*2}px;background:${p===Math.max(...ATT[cur])?'#00c7fd':'#0068b5'}"></span>
+        <span style="color:var(--faint)">${p}%</span></div>`).join("");
+    }
+    btn.addEventListener("click",()=>{cur=cur===9?1:cur+1; draw();});
+    draw();
+  })();
+  </script>
+</section>
+
 <div id="hud"></div>
 <script>
 const slides = [...document.querySelectorAll(".slide")];
