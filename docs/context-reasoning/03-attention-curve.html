@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · Attention & the Attention Curve — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">01 Index</a>
+    <a href="01-tokenization-deep.html">01</a>
+    <a href="02-context-window.html">02</a>
+    <a href="03-attention-curve.html" class="on">03</a>
+    <a href="04-prompt-roles.html">04</a>
+    <a href="05-reasoning.html">05</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module 01 / Concept 03</span>
+    <h1>Attention &amp; the Attention <span class="hl">Curve</span></h1>
+    <p class="sub">Being inside the context window isn't the same as being seen. Where something sits changes how much the model actually uses it.</p>
+    <div class="meta"><span>Read <b>9 min</b></span><span>Level <b>Intermediate</b></span><span>Prereq <b>Module 00, Concept 02</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> RECALL CURVE / INTERACTIVE</span><span>ILLUSTRATIVE · BASED ON LIU ET AL. 2023</span></div>
+    <div class="panel-body" id="fig">
+      <svg id="rc-svg" viewBox="0 0 520 220" style="width:100%;max-width:560px;display:block"></svg>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <button class="btn" data-p="0">Start</button>
+        <button class="btn" data-p="1">Early</button>
+        <button class="btn" data-p="2">Middle</button>
+        <button class="btn" data-p="3">Late</button>
+        <button class="btn" data-p="4">End</button>
+      </div>
+    </div>
+    <div class="panel-ft" id="fig-ft">CLICK A POSITION TO READ ITS RECALL RATE</div>
+  </div>
+  <div class="figure-note">Curve shape and recall percentages are illustrative, drawn to match the qualitative U-shape Liu et al. (2023) reported — not raw numbers from the paper.</div>
+
+  <div class="prose">
+    <h2>// Recap: attention is a weighting, not a lookup</h2>
+    <p>Module 00 introduced attention as the mechanism that lets a model weigh other tokens when building a token's representation — why "it" in "the animal didn't cross the street because it was too tired" ends up meaning "animal" <a href="#ref-s2">[S2]</a>. That happens through a Query for each token, matched against every other token's Key, producing a Value-weighted blend of everyone else's representation <a href="#ref-s2">[S2]</a>. The original formulation calls this "an attention mechanism relating different positions of a single sequence in order to compute a representation of the sequence" <a href="#ref-s3">[S3]</a>. The important detail: attention doesn't pick one relevant token and ignore the rest — it distributes a limited amount of weight across every token in the context, unevenly, by training. A ten-token context and a ten-thousand-token context aren't just different sizes; they're different in how much attention budget any single token can expect.</p>
+
+    <h2>// Lost in the middle</h2>
+    <p>Liu et al.'s 2023 study tested how well models retrieve relevant information depending on where it sits in a long input, and found that "performance is often highest when relevant information occurs at the beginning or end of the input context, and significantly degrades when models must access relevant information in the middle of long contexts, even for explicitly long-context models" <a href="#ref-s1">[S1]</a>. That last clause matters most: this isn't a small-context-window artifact — it holds for models built specifically for long input. A bigger advertised window doesn't fix it; it's a separate axis of degradation from raw capacity.</p>
+    <p>A 2024 follow-up went looking for the mechanism behind that behavior and found a matching pattern in the model's actual attention weights: "LLMs exhibit a U-shaped attention bias where the tokens at the beginning and at the end of its input receive higher attention, regardless of their relevance" <a href="#ref-s5">[S5]</a>. "Regardless of their relevance" is the key phrase — this is a positional bias, not the model correctly judging that edge content matters more. Two independent methods — task accuracy by position, and raw attention weight by position — landing on the same U-shape is why the curve gets treated as a real, replicated property of these models, not one eval's artifact.</p>
+
+    <h2>// Why position matters mechanically</h2>
+    <p><b>Primacy.</b> In an autoregressive, causally-masked model, every later token is conditioned on everything before it. The original transformer paper modifies self-attention in the decoder "to prevent positions from attending to subsequent positions," so "the predictions for position i can depend only on the known outputs at positions less than i" <a href="#ref-s3">[S3]</a>. The first tokens set up the frame every later token is generated inside — nothing placed near the end gets to be "present" for the interpretation of everything earlier the way position 1 is present for everything after it.</p>
+    <p><b>Recency.</b> The tokens immediately before the point of generation dominate local attention simply by proximity — local coherence depends heavily on what was just said, and the end of a long context is always "nearby" to whatever comes right after it.</p>
+    <p><b>The middle.</b> Content far from both edges gets neither advantage, and has the most competing tokens on both sides bidding for a share of a fixed attention budget <a href="#ref-s3">[S3]</a> <a href="#ref-s4">[S4]</a>. With no positional pull toward it, middle content ends up systematically diluted — present in the window, technically available, underweighted relative to its actual relevance <a href="#ref-s5">[S5]</a>.</p>
+    <p>This is also the sharper, mechanistic version of concept 02's "context rot": Anthropic's "as the number of tokens in the context window increases, the model's ability to accurately recall information from that context decreases" <a href="#ref-s4">[S4]</a> describes an aggregate trend across window size. The curve explains part of why — it isn't every token degrading uniformly, it's the middle band degrading most while the edges hold up. A bigger window being technically available doesn't mean content placed anywhere in it gets equal weight: composition (concept 02 — what's in the window, how redundant, how relevant) and position (concept 03 — where it sits) are two separate levers on the same problem. A well-curated window with a critical instruction buried in the middle still underuses its own best material.</p>
+    <p>Practically: don't bury the critical instruction in the middle of a long document dump — put it at the start, the end, or both. Repeat critical constraints near the end of a long prompt, since recency gives the tail outsized weight and a constraint stated once, far earlier, may have lost ground by generation time. And order retrieved chunks by importance, not by original document order — defaulting to source order is arbitrary with respect to the curve; putting the highest-relevance chunk at an edge puts it where it's actually likely to be used.</p>
+
+    <h2>// Pro vs. amateur</h2>
+    <p>Amateurs see "128k context" or "1M context" in the marketing and read it as a promise of uniform attention quality across the whole window. Pros know the number is a capacity ceiling, not a quality guarantee — recall varies substantially by position well inside that ceiling, even on models built for long context <a href="#ref-s1">[S1]</a>. Amateurs state a critical constraint once, early, and trust the model to carry it forward through everything that follows; pros restate load-bearing constraints, especially right before the model has to act on them, because a single early statement is vulnerable to exactly the middle-dilution and recency effects above. Amateurs paste retrieved or injected content in whatever order it arrived in — file order, search-result order; pros order it deliberately, most-important-first-or-last, because the curve rewards the edges and punishes the middle regardless of how relevant the content actually is <a href="#ref-s5">[S5]</a>.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" id="ref-s1" href="https://arxiv.org/abs/2307.03172"><span class="src">Paper · Liu et al. 2023</span><span class="t">Lost in the Middle: How Language Models Use Long Contexts</span></a>
+    <a class="ref" id="ref-s2" href="https://jalammar.github.io/illustrated-transformer/"><span class="src">Blog · Jay Alammar</span><span class="t">The Illustrated Transformer</span></a>
+    <a class="ref" id="ref-s3" href="https://arxiv.org/abs/1706.03762"><span class="src">Paper · Vaswani et al. 2017</span><span class="t">Attention Is All You Need</span></a>
+    <a class="ref" id="ref-s4" href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"><span class="src">Engineering blog · Anthropic</span><span class="t">Effective context engineering for AI agents</span></a>
+    <a class="ref" id="ref-s5" href="https://arxiv.org/abs/2406.16008"><span class="src">Paper · Yu et al. 2024</span><span class="t">Found in the Middle: Calibrating Positional Attention Bias Improves Long Context Utilization</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="02-context-window.html">← 02 · Context &amp; the Context Window</a>
+    <a class="next" href="04-prompt-roles.html">04 · Prompt Roles →</a>
+  </nav>
+</main>
+<script>
+// Illustrative U-curve: 5 marker points (x in svg coords, recall %)
+const POINTS = [[40,95,"START"],[150,72,"EARLY"],[260,48,"MIDDLE"],[370,74,"LATE"],[480,96,"END"]];
+const CURVE = "M40,55 C120,140 200,175 260,182 C320,175 400,140 480,54"; // hand-drawn U, y flipped (svg y grows down)
+const svg = document.getElementById("rc-svg"), ft = document.getElementById("fig-ft");
+function render(sel){
+  svg.innerHTML = `<path d="${CURVE}" fill="none" stroke="#0068b5" stroke-width="2"/>` +
+    POINTS.map(([x,r,name],i) => {
+      const y = 220 - r*1.6; // recall% -> y position, roughly tracking the curve
+      const on = i === sel;
+      return `<circle cx="${x}" cy="${y}" r="${on?7:4}" fill="${on?'#00c7fd':'#0068b5'}"/>`;
+    }).join("");
+  ft.innerHTML = sel == null ? "CLICK A POSITION TO READ ITS RECALL RATE" :
+    `POSITION "<b>${POINTS[sel][2]}</b>" — ~${POINTS[sel][1]}% RECALL IN THE LIU ET AL. 2023 EVAL`;
+}
+document.querySelectorAll("[data-p]").forEach(b =>
+  b.addEventListener("click", () => render(+b.dataset.p)));
+render(null);
+</script>
+</body>
+</html>
