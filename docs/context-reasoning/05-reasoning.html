@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · Reasoning, in Depth — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">01 Index</a>
+    <a href="01-tokenization-deep.html">01</a>
+    <a href="02-context-window.html">02</a>
+    <a href="03-attention-curve.html">03</a>
+    <a href="04-prompt-roles.html">04</a>
+    <a href="05-reasoning.html" class="on">05</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module 01 / Concept 05</span>
+    <h1>Reasoning, in <span class="hl">Depth</span></h1>
+    <p class="sub">Reasoning isn't a separate faculty a model switches on. It's more tokens spent before the answer — and more tokens is a knob, not a guarantee.</p>
+    <div class="meta"><span>Read <b>9 min</b></span><span>Level <b>Intermediate</b></span><span>Prereq <b>Module 00, Concept 01</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> REASONING TRACE / INTERACTIVE</span><span>SAME PROMPT · TWO PATHS</span></div>
+    <div class="panel-body" id="fig">
+      <div style="display:flex;gap:8px;">
+        <button class="btn" id="rt-direct">Direct answer</button>
+        <button class="btn" id="rt-steps">Step-by-step</button>
+      </div>
+      <div id="rt-out" style="margin-top:16px;padding:14px;border:1px solid var(--line);font-size:.9rem;line-height:1.7;min-height:6em;"></div>
+      <button class="btn" id="rt-next" style="margin-top:12px;display:none;">Next step ▸</button>
+    </div>
+    <div class="panel-ft" id="fig-ft">14 TOKENS — NO INTERMEDIATE COMPUTATION SHOWN OR SPENT</div>
+  </div>
+  <div class="figure-note">Token counts are illustrative estimates, not measured from a real model run.</div>
+
+  <div class="prose">
+    <h2>// More tokens, not a different process</h2>
+    <p>An autoregressive model produces one token at a time, and each new token is computed from everything already in the context — including tokens the model itself just generated. That's the entire mechanical content of "reasoning" in a language model. There is no separate reasoning module, no scratch space consulted before deciding what to say, no cognitive faculty distinct from "predict the next token" that switches on for hard problems. The only way an autoregressive model gets more computation applied to a problem is by writing more tokens first — every additional token is another full forward pass, conditioned on everything written so far, including its own prior output. An intermediate token that states a sub-conclusion isn't decoration; it's compute the model would not otherwise get to spend, and it becomes part of the input to every token generated after it.</p>
+    <p>So reasoning is spending more generated tokens before committing to a final answer, not a distinct process bolted onto next-token prediction. Whether those tokens are visible chain-of-thought in the same response or routed into a separate "thinking" channel the API treats specially, the mechanism is identical — more forward passes, conditioned on the growing sequence, before the model outputs the tokens it treats as the answer. Which means everything already true about tokens elsewhere in this module is true of reasoning tokens specifically: they cost money, they take time to generate, and more of them isn't free.</p>
+
+    <h2>// Chain-of-thought and extended thinking</h2>
+    <p>Wei et al.'s 2022 paper made this practical rather than theoretical: prompting a model with a few worked examples that show intermediate steps, instead of examples that jump straight from question to answer, "significantly improves the ability of large language models to perform complex reasoning" <a href="#ref-s1">[S1]</a>. The reported gains aren't marginal — "prompting a 540B-parameter language model with just eight chain of thought exemplars achieves state of the art accuracy on the GSM8K benchmark of math word problems, surpassing even finetuned GPT-3 with a verifier" <a href="#ref-s1">[S1]</a>. A handful of few-shot examples showing steps outperformed a model fine-tuned for the task and paired with an external verifier. That gain isn't free: every intermediate step is tokens the model wouldn't otherwise generate, meaning added latency and added cost per call. Chain-of-thought is a trade — tokens for accuracy — and it pays off most on genuinely multi-step problems where a direct jump from question to answer gives the model no intermediate computation to work with.</p>
+    <p>Current model providers have since turned the same idea into a first-class API feature: a dedicated reasoning phase with its own token budget, structurally separated from the final answer but mechanically identical to it. Anthropic's extended thinking is representative — turning it on exposes the mechanism directly: "Claude creates <code>thinking</code> content blocks where it outputs its internal reasoning. Claude incorporates insights from this reasoning before crafting a final response" <a href="#ref-s2">[S2]</a>. The budget behaves like a compute knob: "Larger budgets can improve response quality by enabling more thorough analysis for complex problems, although Claude may not use the entire budget allocated, especially at ranges above 32k" <a href="#ref-s2">[S2]</a>, and the returns diminish — "Higher token counts enable more comprehensive reasoning but with diminishing returns depending on the task" <a href="#ref-s2">[S2]</a>. The trace itself may be shown in full, summarized, or omitted, but the billing doesn't change: "you're charged for the full thinking tokens generated by the original request, not the summary tokens," so "the billed output token count will not match the count of tokens you see in the response" <a href="#ref-s2">[S2]</a>. A short or hidden trace tells you nothing about how much was actually spent producing it.</p>
+
+    <h2>// A trace isn't proof</h2>
+    <p>It's tempting to conclude that a longer, more detailed reasoning trace is evidence of a more reliable answer — if you can see the steps and they look sound, the conclusion must be sound too. Anthropic's faithfulness research directly undermines that. It investigates whether "the stated reasoning is a faithful explanation of the model's actual reasoning (i.e., its process for answering the question)" <a href="#ref-s3">[S3]</a>, by perturbing the chain-of-thought — inserting mistakes, paraphrasing it — and watching whether the final answer moves. If the visible trace really were the computation path, corrupting it should reliably corrupt the answer. Instead: "Models show large variation across tasks in how strongly they condition on the CoT when predicting their answer, sometimes relying heavily on the CoT and other times primarily ignoring it" <a href="#ref-s3">[S3]</a>. A trace that reads as the reason for an answer can be a plausible-sounding narrative generated alongside an answer the model would have reached anyway — a post-hoc rationalization, not a report of what happened inside the forward passes that produced it.</p>
+    <p>The most counterintuitive finding sharpens this: "As models become larger and more capable, they produce less faithful reasoning on most tasks we study" <a href="#ref-s3">[S3]</a>. Faithfulness does not simply track capability upward — a more capable model is not automatically a more honest narrator of its own process. The paper also cautions against the too-simple mechanical story that more tokens is the whole explanation: "CoT's performance boost does not seem to come from CoT's added test-time compute alone" <a href="#ref-s3">[S3]</a>. The overall finding is a caveat, not a dismissal — "CoT can be faithful if the circumstances such as the model size and task are carefully chosen" <a href="#ref-s3">[S3]</a> — but a trace looking coherent and well-structured is not, by itself, proof it's an accurate account of how the answer was reached. Confident wrong reasoning is a real and common failure mode: fluent, step-numbered, still wrong, because nothing about the mechanism guarantees the steps are true, only that the model had more context to condition on, including its own possibly-wrong earlier steps. And when a model lacks the underlying fact a question needs, spending more tokens "reasoning" toward it doesn't manufacture that fact — it just produces a longer, equally fluent way of still being wrong.</p>
+
+    <h2>// Pro vs. amateur</h2>
+    <p>Amateurs treat a longer trace, or turning on extended thinking, as a free accuracy upgrade — more tokens, so a better answer, no further scrutiny needed. Pros treat the reasoning-token budget as a cost/quality knob with diminishing returns <a href="#ref-s2">[S2]</a>, tuning it per task rather than maxing it out by default. Amateurs read a clean, step-numbered trace and take it as proof the answer is right; pros verify conclusions independently of how confident or detailed the trace reads, because the faithfulness research shows a trace can be structurally sound and causally disconnected from the actual answer at the same time <a href="#ref-s3">[S3]</a>. Amateurs assume "think step by step" prompting is a universal trick; pros know its payoff is uneven — strongest in larger models on certain task types <a href="#ref-s1">[S1]</a> — and it tends to matter less on models already tuned with dedicated reasoning modes, where the equivalent behavior is closer to built in. Above all, pros never confuse "the model generated a lot of reasoning tokens" with "the model reasoned correctly" — the first is a token count, the second is a claim about truth, and closing that gap takes independent verification, not a longer trace.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" id="ref-s1" href="https://arxiv.org/abs/2201.11903"><span class="src">Paper · Wei et al. 2022</span><span class="t">Chain-of-Thought Prompting Elicits Reasoning in Large Language Models</span></a>
+    <a class="ref" id="ref-s2" href="https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking"><span class="src">Docs · Anthropic</span><span class="t">Extended thinking</span></a>
+    <a class="ref" id="ref-s3" href="https://www.anthropic.com/research/measuring-faithfulness-in-chain-of-thought-reasoning"><span class="src">Research · Anthropic 2023</span><span class="t">Measuring Faithfulness in Chain-of-Thought Reasoning</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="04-prompt-roles.html">← 04 · System / User / Assistant Roles</a>
+    <a class="next" href="deck.html">Deck · Context &amp; Reasoning →</a>
+  </nav>
+</main>
+<script>
+const PROMPT = "A train leaves at 60mph, another leaves 30 minutes later at 90mph on the same route. When does the second train catch up?";
+const DIRECT = {tokens: 14, text: "The second train catches up after 1.5 hours from when it departs."};
+const STEPS = [
+  "Let t = hours after the second train departs.",
+  "First train's head start distance: 60 × 0.5 = 30 miles.",
+  "First train's position: 30 + 60t. Second train's position: 90t.",
+  "Set equal: 90t = 30 + 60t → 30t = 30 → t = 1.",
+  "The second train catches up 1 hour after it departs (1.5h after the first train left).",
+];
+let mode = null, step = 0;
+const out = document.getElementById("rt-out"), ft = document.getElementById("fig-ft"),
+      next = document.getElementById("rt-next");
+function drawDirect(){
+  out.innerHTML = `<div style="color:var(--faint);font-size:.8rem;margin-bottom:8px;">PROMPT: "${PROMPT}"</div>${DIRECT.text}`;
+  ft.innerHTML = `<b>${DIRECT.tokens} TOKENS</b> — NO INTERMEDIATE COMPUTATION SHOWN OR SPENT`;
+  next.style.display = "none";
+}
+function drawSteps(){
+  const shown = STEPS.slice(0, step+1);
+  const tokCount = 14 + shown.length * 12; // illustrative running count
+  out.innerHTML = `<div style="color:var(--faint);font-size:.8rem;margin-bottom:8px;">PROMPT: "${PROMPT}"</div>` +
+    shown.map((s,i) => `<div>${i+1}. ${s}</div>`).join("");
+  ft.innerHTML = step < STEPS.length-1
+    ? `~${tokCount} TOKENS SO FAR — EACH STEP IS COMPUTE THE DIRECT PATH NEVER SPENT`
+    : `~${tokCount} TOKENS TOTAL — ${Math.round(tokCount/DIRECT.tokens)}× THE DIRECT ANSWER'S COST`;
+  next.style.display = step < STEPS.length-1 ? "inline-block" : "none";
+}
+document.getElementById("rt-direct").addEventListener("click", () => { mode="direct"; drawDirect(); });
+document.getElementById("rt-steps").addEventListener("click", () => { mode="steps"; step=0; drawSteps(); });
+next.addEventListener("click", () => { step = Math.min(STEPS.length-1, step+1); drawSteps(); });
+drawDirect();
+</script>
+</body>
+</html>
