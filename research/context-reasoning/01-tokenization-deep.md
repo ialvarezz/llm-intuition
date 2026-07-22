@@ -58,6 +58,15 @@
 - Performance claim, verbatim: "tiktoken is between 3-6x faster than a comparable open source tokeniser" (measured against `GPT2TokenizerFast`, 1GB of text, GPT-2 tokeniser).
 - The README does not state an explicit numeric vocabulary size for either encoding; the ~100k/~200k figures used in the note are the standard names (`cl100k_base` ≈ 100k, `o200k_base` ≈ 200k) as encoded in the encoding names themselves, corroborated by [S1]'s note that vocab sizes in this family run from the 256-byte base up through tens/hundreds of thousands of learned merges.
 
+## [S5] OpenAI developer docs — Key concepts
+- **URL:** https://developers.openai.com/api/docs/concepts
+- **Fetched:** 2026-07-02 (copied forward from `research/02-tokens-and-tokenization.md` [S8]; not re-fetched, same source already researched for Module 00 and re-verified there).
+- **Type:** docs
+- **Note:** Added post-review to source the English tokens-per-word rule of thumb used in the note's cost section — this task's original four sources didn't cover that figure, and the note stated it uncited (and inverted) before this correction.
+
+### Extracted
+- Token/word rule of thumb, verbatim: "1 token is approximately 4 characters or 0.75 words for English text." — equivalently, roughly 1.3 tokens per word of English.
+
 ## Quote audit (2026-07-22, live re-fetch)
 Every verbatim-quoted string above was re-fetched as raw/live text and checked as an exact substring (apostrophes/curly-quotes normalized to straight) of the source:
 - [S2] Hugging Face chat_templating: re-fetched via raw GitHub markdown (`raw.githubusercontent.com/huggingface/transformers/main/docs/source/en/chat_templating.md`). All quotes ("The list of `role` and `content` dictionaries...", "Chat models come with **chat templates**...", "drastically worse performance") confirmed exact matches.

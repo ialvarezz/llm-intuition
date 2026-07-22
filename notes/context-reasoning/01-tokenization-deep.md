@@ -30,7 +30,7 @@ Two things follow from this. First, get the control tokens wrong — or reformat
 
 ## Why tokenization drives cost
 
-Because pricing and context limits are counted in tokens rather than words or characters, the token-per-character rate of whatever you're sending directly determines what you pay and how much room you have left. English prose is the tokenizer's best case — its common words and morphemes were exactly what the training corpus was full of, so it compresses efficiently, roughly 0.75 tokens per word. Code, CJK scripts, and rare or out-of-distribution strings do not get that benefit: a byte-level vocabulary sized and merged primarily on English-heavy web text will represent less-common scripts and syntaxes with more tokens per character, because fewer of their common patterns made it into the learned merge table's high-frequency slots. The practical upshot is that "how long is this input" is not a character count or a word count question — it's a question about how well this particular text matches the statistics the tokenizer was trained on.
+Because pricing and context limits are counted in tokens rather than words or characters, the token-per-character rate of whatever you're sending directly determines what you pay and how much room you have left. English prose is the tokenizer's best case — its common words and morphemes were exactly what the training corpus was full of, so it compresses efficiently: OpenAI's own developer docs put the rule of thumb at "1 token is approximately 4 characters or 0.75 words for English text" [S5], which works out to roughly 1.3 tokens per word. Code, CJK scripts, and rare or out-of-distribution strings do not get that benefit: a byte-level vocabulary sized and merged primarily on English-heavy web text will represent less-common scripts and syntaxes with more tokens per character, because fewer of their common patterns made it into the learned merge table's high-frequency slots. The practical upshot is that "how long is this input" is not a character count or a word count question — it's a question about how well this particular text matches the statistics the tokenizer was trained on.
 
 ## Odd model behavior explained by tokenization
 
@@ -56,3 +56,4 @@ Amateurs think of a chat prompt as "the messages." Pros know a chat prompt is "t
 - Hugging Face — Chat templates: https://huggingface.co/docs/transformers/chat_templating
 - Sennrich et al. 2015 — Neural Machine Translation of Rare Words with Subword Units (BPE paper): https://arxiv.org/abs/1508.07909
 - tiktoken (OpenAI, GitHub): https://github.com/openai/tiktoken
+- OpenAI developer docs — Key concepts: https://developers.openai.com/api/docs/concepts
