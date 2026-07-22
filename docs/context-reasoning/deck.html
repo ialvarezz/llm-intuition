@@ -71,6 +71,61 @@ body.deck-mode .slide.on{display:flex;}
   </ul>
 </section>
 
+<section class="slide" id="s-3">
+  <span class="kicker">1 · Tokenization</span>
+  <h2>The model never sees <span class="hl">words</span></h2>
+  <textarea id="dk-tok-in" rows="2" style="width:100%;max-width:64ch;">Tokenization is the substrate everything else is built on.</textarea>
+  <div id="dk-tok-out" style="font-size:1.05rem;line-height:2.2;margin-top:14px;"></div>
+  <script>
+  (function(){
+    const COMMON = ["the","ing","tion","er","re","sub","form","and","is","not","word","piece","token","stra","te"];
+    function toy(text){
+      const out = [];
+      for (const word of text.split(/(\s+)/)){
+        if (!word) continue;
+        if (/^\s+$/.test(word)) { if (out.length) out[out.length-1].glue = word; continue; }
+        let rest = word.toLowerCase(), orig = word, pos = 0;
+        while (rest.length){
+          const hit = COMMON.find(c => rest.startsWith(c));
+          const n = hit ? hit.length : Math.min(rest.length, 4);
+          out.push({s: orig.slice(pos, pos+n), glue:""});
+          pos += n; rest = rest.slice(n);
+        }
+      }
+      return out;
+    }
+    const inp = document.getElementById("dk-tok-in"), out = document.getElementById("dk-tok-out");
+    function render(){
+      const toks = toy(inp.value);
+      out.innerHTML = toks.map((t,i) => `<span class="tk c${i%5+1}">${t.glue.replace(/ /g,"&nbsp;")}${t.s}</span>`).join("")
+        + `<div style="font-family:var(--mono);font-size:.68rem;color:var(--faint);margin-top:10px;letter-spacing:.1em;">${toks.length} TOKENS · ${inp.value.length} CHARS</div>`;
+    }
+    inp.addEventListener("input", render);
+    render();
+  })();
+  </script>
+</section>
+
+<section class="slide" id="s-4">
+  <span class="kicker">1 · Tokenization</span>
+  <h2>Roles are <span class="hl">tokens</span>, not metadata</h2>
+  <div class="toggle2">
+    <button class="btn" id="dk-cf-rendered">Rendered chat</button>
+    <button class="btn" id="dk-cf-raw">Raw tokens</button>
+  </div>
+  <pre class="raw" id="dk-cf-out" style="margin-top:14px;background:var(--panel);border:1px solid var(--line);padding:14px;max-width:70ch;"></pre>
+  <script>
+  (function(){
+    const RENDERED = `System: Answer concisely.\nUser: What's the capital of France?\nAssistant: Paris.`;
+    const RAW = `<|system|>Answer concisely.<|end|>\n<|user|>What's the capital of France?<|end|>\n<|assistant|>Paris.<|end|>`;
+    const out = document.getElementById("dk-cf-out");
+    document.getElementById("dk-cf-rendered").addEventListener("click", () => out.textContent = RENDERED);
+    document.getElementById("dk-cf-raw").addEventListener("click", () => out.textContent = RAW);
+    out.textContent = RENDERED;
+  })();
+  </script>
+</section>
+
 <div id="hud"></div>
 <script>
 const slides = [...document.querySelectorAll(".slide")];
