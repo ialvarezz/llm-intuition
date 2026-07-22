@@ -256,6 +256,48 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
+<section class="slide" id="s-9">
+  <span class="kicker">4 · Roles</span>
+  <h2>Build the raw <span class="hl">sequence</span></h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn" data-lane="system" data-text="Always answer in bullet points.">+ System</button>
+    <button class="btn" data-lane="user" data-text="Write this as one flowing paragraph.">+ User (conflicting)</button>
+    <button class="btn" data-lane="user" data-text="Summarize the attached report.">+ User (task)</button>
+    <button class="btn" id="dk-pa-reset">Reset</button>
+  </div>
+  <pre class="raw" id="dk-pa-out" style="margin-top:14px;background:var(--panel);border:1px solid var(--line);padding:14px;max-width:70ch;"></pre>
+  <script>
+  (function(){
+    const COLOR={system:"#b06ad6",user:"#00c7fd"};
+    let seq=[];
+    const out=document.getElementById("dk-pa-out");
+    function render(){
+      out.innerHTML = seq.length===0 ? "Add snippets to build the raw sequence."
+        : seq.map(s=>`<span style="color:${COLOR[s.lane]}">[${s.lane}]</span> ${s.text}`).join("\n");
+    }
+    document.querySelectorAll("[data-lane]").forEach(b=>
+      b.addEventListener("click",()=>{seq.push({lane:b.dataset.lane,text:b.dataset.text}); render();}));
+    document.getElementById("dk-pa-reset").addEventListener("click",()=>{seq=[]; render();});
+    render();
+  })();
+  </script>
+</section>
+
+<section class="slide" id="s-10">
+  <span class="kicker">4 · Roles</span>
+  <h2>Pick the role by the <span class="hl">job</span></h2>
+  <div class="pick">
+    <details><summary>I want behavior that holds for the whole session…</summary>
+      <div class="ans"><b>System.</b> Stable instructions, style rules, persona — set once, applies every turn.</div></details>
+    <details><summary>I want to ask something specific right now…</summary>
+      <div class="ans"><b>User.</b> The actual task or question — changes every turn.</div></details>
+    <details><summary>I want to show an example of the response style I want…</summary>
+      <div class="ans"><b>Assistant (few-shot).</b> A prior turn the model treats as its own past output — shapes tone by example.</div></details>
+    <details><summary>I'm passing in untrusted content (a doc, a tool result)…</summary>
+      <div class="ans"><b>User or tool role, explicitly delimited.</b> Never let it read as system or assistant — that's how indirect prompt injection works.</div></details>
+  </div>
+</section>
+
 <div id="hud"></div>
 <script>
 const slides = [...document.querySelectorAll(".slide")];
