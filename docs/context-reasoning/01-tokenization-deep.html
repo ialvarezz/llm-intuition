@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Tokenization, Deeper — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">01 Index</a>
+    <a href="01-tokenization-deep.html" class="on">01</a>
+    <a href="02-context-window.html">02</a>
+    <a href="03-attention-curve.html">03</a>
+    <a href="04-prompt-roles.html">04</a>
+    <a href="05-reasoning.html">05</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module 01 / Concept 01</span>
+    <h1>Tokeni<span class="hl">z</span>ation, Deeper</h1>
+    <p class="sub">Module 00 showed that a model never sees words. Here's the mechanism that decides what it sees instead — and why chat roles, cost, and weird failures all trace back to it.</p>
+    <div class="meta"><span>Read <b>10 min</b></span><span>Level <b>Intermediate</b></span><span>Prereq <b>Module 00</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> BPE MERGES / INTERACTIVE</span><span>ILLUSTRATIVE · TOY MERGE TABLE</span></div>
+    <div class="panel-body" id="fig">
+      <div id="bpe-word" style="font-family:var(--mono);font-size:1.3rem;letter-spacing:.08em;min-height:2em;"></div>
+      <button class="btn" id="bpe-btn" style="margin-top:16px;">Next merge ▸</button>
+    </div>
+    <div class="panel-ft" id="fig-ft">STATUS LINE</div>
+  </div>
+  <div class="figure-note">This merge table is hand-made to show the shape of BPE. A real tokenizer learns thousands of merges from a training corpus.</div>
+
+  <div class="prose">
+    <h2>// BPE, step by step</h2>
+    <p>The dominant scheme behind GPT-family, Llama, and Mistral tokenizers is byte pair encoding (BPE), and it's worth being precise about what "learned vocabulary" means. Start from the smallest possible alphabet: raw bytes. Modern BPE tokenizers work byte-level, so before any merging happens, an input string is just its UTF-8 byte sequence — 256 possible symbols, IDs 0 through 255 <a href="#ref-s1">[S1]</a>. Then the algorithm scans a large training corpus, counts how often every adjacent pair of symbols occurs, and merges the single most frequent pair into a new symbol, added to the vocabulary as the next token ID. The corpus is rescanned with that merge applied, frequencies are recounted, and the process repeats — one merge per step — until the vocabulary hits a target size, typically tens of thousands to low hundreds of thousands of entries <a href="#ref-s1">[S1]</a><a href="#ref-s3">[S3]</a><a href="#ref-s4">[S4]</a>. tiktoken's production encodings are a concrete instance: <code>cl100k_base</code> and <code>o200k_base</code> are named for roughly their vocabulary sizes, and different OpenAI model families use different named encodings — there is no single, universal "the" GPT tokenizer <a href="#ref-s4">[S4]</a>.</p>
+    <p>The word to sit with is <i>learned</i>. This is a statistical compression procedure run once over a training corpus, then frozen and shipped with the model — not a linguist's rule set. tiktoken's own README gives a clean illustration: because "ing" is a common English subword, BPE will often split "encoding" into tokens like "encod" and "ing" <a href="#ref-s4">[S4]</a> — the split falls where statistics found a boundary, not where a grammarian would put one. BPE itself predates LLMs: Sennrich et al. (2015) introduced it for machine translation, framing the core problem as translation being open-vocabulary while models want a fixed vocabulary <a href="#ref-s3">[S3]</a> — the same trade-off that makes it the right tool for tokenizing arbitrary internet text today.</p>
+
+    <h2>// Vocabulary size is a trade-off</h2>
+    <p>A bigger vocabulary absorbs more of a given text into single tokens rather than several — tiktoken's BPE compresses so each token corresponds to roughly 4 bytes of original text on average <a href="#ref-s4">[S4]</a>. Fewer tokens per input means shorter sequences: cheaper to process, and since pricing and context limits are denominated in tokens, cheaper to pay for. But every vocabulary entry needs a row in the embedding matrix and a row in the output matrix — more vocabulary is more parameters and more compute at exactly the two layers every forward pass touches. Shrink the vocabulary instead and those matrices shrink, but sequences get longer for the same text, and transformer attention cost scales with sequence length too. No free lunch — which is exactly why different model families ship different vocabulary sizes and different named tiktoken encodings for different model generations <a href="#ref-s4">[S4]</a>, rather than converging on one number.</p>
+
+    <h2>// Special tokens are real tokens</h2>
+    <p>When you chat with a model through a UI, you see a clean back-and-forth. What the model consumes is one flat token sequence, and the role structure is represented inside it by literal vocabulary entries — control tokens like <code>&lt;|user|&gt;</code>, <code>&lt;|assistant|&gt;</code>, or bracket markers like <code>[INST]</code>/<code>[/INST]</code> — inserted around each message's content before tokenization <a href="#ref-s2">[S2]</a>. Hugging Face's chat template docs make this concrete: Mistral-7B-Instruct and Zephyr-7B are fine-tuned from the <i>same</i> base model, but use entirely different control-token schemes for the same role structure <a href="#ref-s2">[S2]</a>. There's no universal "role" baked into the architecture — it's populated by whichever tokens that model's chat template was fine-tuned to expect, and getting them wrong doesn't degrade gracefully: it can mean the model continues the user's message instead of replying to it <a href="#ref-s2">[S2]</a>. These tokens are real vocabulary entries too — every role marker and generation-prompt token consumes a slot in the sequence and counts against the context window and the token-metered price, invisible in the chat bubble but not invisible in the bill.</p>
+
+    <h2>// Pro vs. amateur</h2>
+    <p>Amateurs think in words and characters; pros think in tokens, because that's the actual unit cost, context budget, and model behavior are all measured in. Amateurs assume tokenization is a fixed, universal fact about a string; pros know the same text produces different token counts on different tokenizers — different model families ship different named encodings for exactly this reason <a href="#ref-s4">[S4]</a>, and recounting against the model you're actually using rather than reusing a stale count is standard practice, not paranoia. Amateurs think a chat prompt is "the messages"; pros know it's the messages plus the chat template's control tokens — real, invisible-in-the-UI cost that's billed and budgeted exactly like visible text <a href="#ref-s2">[S2]</a>. And amateurs are baffled when a model mangles a long number or a rare username, or can't reliably spell a word; pros recognize a rare string fragmenting into unfamiliar chunks, and remember Karpathy's blunt framing — "Why can't LLM spell words? Tokenization." <a href="#ref-s1">[S1]</a> — the model never had character-level access to begin with.</p>
+  </div>
+
+  <div class="video"><iframe src="https://www.youtube.com/embed/zduSFxRajkE" title="Let's build the GPT Tokenizer" allowfullscreen loading="lazy"></iframe></div>
+
+  <div class="refs">
+    <a class="ref" id="ref-s1" href="https://www.youtube.com/watch?v=zduSFxRajkE"><span class="src">Video · Andrej Karpathy</span><span class="t">Let's build the GPT Tokenizer</span></a>
+    <a class="ref" id="ref-s2" href="https://huggingface.co/docs/transformers/chat_templating"><span class="src">Docs · Hugging Face</span><span class="t">Chat templates</span></a>
+    <a class="ref" id="ref-s3" href="https://arxiv.org/abs/1508.07909"><span class="src">Paper · Sennrich et al. 2015</span><span class="t">Neural Machine Translation of Rare Words with Subword Units</span></a>
+    <a class="ref" id="ref-s4" href="https://github.com/openai/tiktoken"><span class="src">Code · OpenAI</span><span class="t">tiktoken</span></a>
+  </div>
+
+  <nav class="pager">
+    <span class="gap"></span>
+    <a class="next" href="02-context-window.html">02 · Context Window →</a>
+  </nav>
+</main>
+<script>
+const START = ["t","o","k","e","n","i","z","a","t","i","o","n"];
+const MERGES = [
+  [[0,1],"to"], [[2,3],"ke"], [[4,5],"ni"], // indices into the *current* array each step
+];
+// Precomputed final states per step (illustrative, not a real learned merge table)
+const STATES = [
+  ["t","o","k","e","n","i","z","a","t","i","o","n"],
+  ["to","k","e","n","i","z","a","t","i","o","n"],
+  ["to","ke","n","i","z","a","t","i","o","n"],
+  ["to","ke","ni","z","a","t","i","o","n"],
+  ["token","iz","a","t","i","o","n"],
+  ["token","iza","t","i","o","n"],
+  ["token","iza","tion"],
+  ["token","ization"],
+];
+let i = 0;
+const word = document.getElementById("bpe-word"), btn = document.getElementById("bpe-btn"),
+      ft = document.getElementById("fig-ft");
+function draw(){
+  word.innerHTML = STATES[i].map((s,k) => `<span class="tk c${k%5+1}">${s}</span>`).join("");
+  ft.textContent = i === STATES.length-1
+    ? `DONE — ${STATES[i].length} FINAL TOKENS FROM ${STATES[0].length} CHARACTERS`
+    : `MERGE STEP ${i}/${STATES.length-1} — ${STATES[i].length} SYMBOLS SO FAR`;
+  btn.disabled = i === STATES.length-1;
+  if (btn.disabled) btn.textContent = "All merges applied";
+}
+btn.addEventListener("click", () => { i = Math.min(STATES.length-1, i+1); draw(); });
+draw();
+</script>
+</body>
+</html>
