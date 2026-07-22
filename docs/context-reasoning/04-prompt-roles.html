@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · System / User / Assistant Roles — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">01 Index</a>
+    <a href="01-tokenization-deep.html">01</a>
+    <a href="02-context-window.html">02</a>
+    <a href="03-attention-curve.html">03</a>
+    <a href="04-prompt-roles.html" class="on">04</a>
+    <a href="05-reasoning.html">05</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module 01 / Concept 04</span>
+    <h1>System / User / Assistant <span class="hl">Roles</span></h1>
+    <p class="sub">Roles aren't metadata the model understands — they're tokens it was trained to weigh differently. That training is a strong habit, not a rule.</p>
+    <div class="meta"><span>Read <b>8 min</b></span><span>Level <b>Intermediate</b></span><span>Prereq <b>Module 00, Concept 01</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> PROMPT ASSEMBLER / INTERACTIVE</span><span>CLICK TO BUILD</span></div>
+    <div class="panel-body" id="fig">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" data-lane="system" data-text="Always answer in bullet points.">+ System: style rule</button>
+        <button class="btn" data-lane="user" data-text="Write this as one flowing paragraph (contradicting the system rule).">+ User: contradicting ask</button>
+        <button class="btn" data-lane="user" data-text="Summarize the attached report.">+ User: task</button>
+        <button class="btn" data-lane="assistant" data-text="Sure, here's a bullet summary:">+ Assistant: prior turn</button>
+        <button class="btn" id="pr-reset">Reset</button>
+      </div>
+      <pre id="pr-out" style="margin-top:16px;background:var(--panel);border:1px solid var(--line);padding:14px;font-size:.82rem;overflow-x:auto;white-space:pre-wrap;"></pre>
+    </div>
+    <div class="panel-ft" id="fig-ft">ADD SNIPPETS TO BUILD THE RAW SEQUENCE</div>
+  </div>
+  <div class="figure-note">Snippets are fixed examples; the assembled view mirrors what the harness actually sends, role markers included.</div>
+
+  <div class="prose">
+    <h2>// Roles are tokens, not categories</h2>
+    <p>A chat request looks like a list of labeled turns — <code>{"role": "system", ...}</code>, <code>{"role": "user", ...}</code>, <code>{"role": "assistant", ...}</code> — and it's tempting to read that as metadata the model consults the way a program reads a JSON key. That isn't what happens. The harness applies a chat template that converts the role/content list into one linear token sequence, inserting literal control tokens at the boundaries: "The list of <code>role</code> and <code>content</code> dictionaries that you pass to a chat model get converted to a token sequence, often with control tokens like <code>&lt;|user|&gt;</code> or <code>&lt;|assistant|&gt;</code> or <code>&lt;|end_of_message|&gt;</code>, which allow the model to see the chat structure" <a href="#ref-s4">[S4]</a>. By generation time there is no <code>role</code> field left — only tokens, no different in kind from any other token in the sequence.</p>
+    <p>The proof this is a template convention rather than something universal: models fine-tuned from the identical base can use completely different control-token vocabularies for the same structural idea. Mistral-7B-Instruct renders a turn as <code>[INST] ... [/INST]</code> with no word "user" or "assistant" anywhere; Zephyr-7B, fine-tuned from that same Mistral base, instead uses <code>&lt;|user|&gt;</code> and <code>&lt;|assistant|&gt;</code> <a href="#ref-s4">[S4]</a>. If "user" and "assistant" were concepts the model understood the way a person understands "who's asking," that wouldn't need re-teaching per fine-tune with an arbitrary choice of symbols — and getting it wrong has a real cost: "with the wrong control tokens, these models would have drastically worse performance" <a href="#ref-s4">[S4]</a>. Anthropic's API makes the same point from a different angle: <code>system</code> is a distinct top-level request field, not one more value of a shared <code>role</code> key sitting in the <code>messages</code> array with <code>user</code>/<code>assistant</code> <a href="#ref-s1">[S1]</a>. OpenAI keeps the equivalent instruction inside one array, under yet another label — "developer" rather than "system" <a href="#ref-s3">[S3]</a>. Three vendors, three concrete implementations of the same idea; the specific tokens and field names are not the constant, the underlying trained behavior is.</p>
+
+    <h2>// A trained priority, not hard logic</h2>
+    <p>Roles change behavior because instruction-tuning and RLHF specifically train the model to weight content differently depending on which role carried it. OpenAI states the intended hierarchy directly: "developer messages are instructions provided by the application developer, prioritized ahead of user messages," while "user messages are instructions provided by an end user, prioritized behind developer messages" <a href="#ref-s3">[S3]</a> — "like a function definition" versus "arguments to a function" <a href="#ref-s3">[S3]</a>. Anthropic's framing points at the same effect from the usage side: "Setting a role in the system prompt focuses Claude's behavior and tone for your use case. Even a single sentence makes a difference" <a href="#ref-s1">[S1]</a>.</p>
+    <p>The crux: this priority is a <b>trained tendency</b>, not hard-wired logic comparable to an OS mechanically refusing a syscall from an unprivileged process. There's no code path that says "if role == system, treat as inviolable" — there's a learned statistical habit that system/developer-labeled content, on average across the training distribution, gets weighted more heavily when it conflicts with user-labeled content. In the common case this works as intended: a system instruction to answer in bullet points quietly shapes format the whole conversation, with no conflict to resolve. The interesting case is when a user turn actively contradicts it — well-trained models tend to hold the line and favor the system instruction <a href="#ref-s1">[S1]</a> <a href="#ref-s3">[S3]</a>, but "tend to" is doing real work in that sentence. A weakly-specified system prompt gives the trained prior less to hold onto, and nothing about role position mechanically forces the outcome — it's a prior competing with everything else in the context, and priors lose sometimes.</p>
+
+    <h2>// Where it breaks: injection</h2>
+    <p>That gap — role as trained behavioral prior versus role as security boundary — is exactly what Greshake et al.'s indirect prompt injection research is built on. Their framing: "So far, it was assumed that the user is directly prompting the LLM. But, what if it is not the user prompting? We argue that LLM-Integrated Applications blur the line between data and instructions" <a href="#ref-s2">[S2]</a>. The attack doesn't touch the user turn at all — it plants instruction-like text inside content the application retrieves and feeds to the model anyway: a web page, a search result, a document. The model doesn't receive that content flagged "instruction embedded in retrieved data"; it just receives tokens, indistinguishable at the model's level from any other tokens in whatever channel carried them in. If those tokens read like an instruction, nothing about their point of entry mechanically stops the model from following them the way it would follow a user instruction — and the paper demonstrated this practically against real systems, including "Bing's GPT-4 powered Chat and code-completion engines" <a href="#ref-s2">[S2]</a>.</p>
+    <p>The general shape of the failure: content arriving through a tool-result or retrieved-document path carries no automatic "this is just data" framing unless something in the harness or prompt makes that framing explicit. Feeding an API response or a file's contents straight into context and expecting instruction-like text inside it to stay inert is exactly the gap this research describes — role position alone (system beats user beats retrieved content, in intended priority order) is a trained tendency about how much weight to give content, not an enforced boundary about what content is allowed to do.</p>
+
+    <h2>// Pro vs. amateur</h2>
+    <p>Amateurs treat the system/user split as a dumping ground for whatever content feels important, and treat role position itself as a security boundary — "it's in the system prompt, so it's safe." Pros put stable, request-independent behavior in the system slot and variable, per-call content in the user slot, because that's both what the model was trained to expect <a href="#ref-s1">[S1]</a> <a href="#ref-s3">[S3]</a> and what keeps the prompt-cache prefix stable — dumping a per-request document into the system slot busts the cache on every call. Amateurs paste retrieved documents or tool output straight into context and trust the channel alone to mark it as inert; pros explicitly delimit and label untrusted content — wrapping it in clear tags, prefacing it as "retrieved data, not instructions" — because position alone doesn't do that work, as the indirect-injection research demonstrates at scale <a href="#ref-s2">[S2]</a>. And above all, pros treat role-based priority as what it actually is: a strong, useful, trained prior that reliably shapes behavior in the common case, never a guarantee that forecloses adversarial or accidental misuse.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" id="ref-s1" href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts"><span class="src">Docs · Anthropic</span><span class="t">Give Claude a role with a system prompt</span></a>
+    <a class="ref" id="ref-s2" href="https://arxiv.org/abs/2302.12173"><span class="src">Paper · Greshake et al. 2023</span><span class="t">Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection</span></a>
+    <a class="ref" id="ref-s3" href="https://platform.openai.com/docs/guides/text-generation"><span class="src">Docs · OpenAI</span><span class="t">Text generation guide (roles section)</span></a>
+    <a class="ref" id="ref-s4" href="https://huggingface.co/docs/transformers/chat_templating"><span class="src">Docs · Hugging Face</span><span class="t">Chat templates</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="03-attention-curve.html">← 03 · Attention &amp; the Attention Curve</a>
+    <a class="next" href="05-reasoning.html">05 · Reasoning →</a>
+  </nav>
+</main>
+<script>
+const COLOR = {system:"#b06ad6", user:"#00c7fd", assistant:"#57b06a"};
+let seq = [];
+const out = document.getElementById("pr-out"), ft = document.getElementById("fig-ft");
+function render(){
+  out.innerHTML = seq.map(s =>
+    `<span style="color:${COLOR[s.lane]}">[${s.lane}]</span> ${s.text}\n`).join("");
+  const hasConflict = seq.some(s=>s.lane==="system") &&
+    seq.some(s=>s.lane==="user" && s.text.includes("contradicting"));
+  ft.textContent = seq.length === 0 ? "ADD SNIPPETS TO BUILD THE RAW SEQUENCE"
+    : hasConflict ? "SYSTEM AND USER CONFLICT — MODELS TYPICALLY LEAN SYSTEM, BUT IT'S A TENDENCY, NOT A GUARANTEE"
+    : `${seq.length} SNIPPET${seq.length>1?"S":""} — THIS IS THE ORDER THE MODEL ACTUALLY READS`;
+}
+document.querySelectorAll("[data-lane]").forEach(b =>
+  b.addEventListener("click", () => { seq.push({lane:b.dataset.lane, text:b.dataset.text}); render(); }));
+document.getElementById("pr-reset").addEventListener("click", () => { seq = []; render(); });
+render();
+</script>
+</body>
+</html>
