@@ -126,6 +126,78 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
+<section class="slide" id="s-5">
+  <span class="kicker">2 · Context window</span>
+  <h2>Everything counts, every <span class="hl">turn</span></h2>
+  <div class="ctxbar" id="dk-cb-bar"></div>
+  <div style="display:flex;gap:10px;margin-top:14px;">
+    <button class="btn" id="dk-cb-turn">+ Add a turn</button>
+    <button class="btn" id="dk-cb-doc">+ Paste a doc</button>
+    <button class="btn" id="dk-cb-reset">Reset</button>
+  </div>
+  <script>
+  (function(){
+    const CAP=8000, OUT=1000;
+    const COLORS={system:"#b06ad6",docs:"#4f9ee0",history:"#57b06a",output:"#e08a3c",free:"#1a2027"};
+    let seg;
+    const bar=document.getElementById("dk-cb-bar"), ft=document.getElementById("fig-ft")||null;
+    function used(){ return seg.system+seg.docs+seg.history+seg.output; }
+    function reset(){ seg={system:400,docs:0,history:0,output:OUT}; draw(); }
+    function add(kind,n){
+      seg[kind]+=n;
+      while (used()>CAP && seg.history>0) seg.history=Math.max(0,seg.history-600);
+      if (used()>CAP) seg[kind]-=used()-CAP;
+      draw();
+    }
+    function draw(){
+      const parts={...seg, free:Math.max(0,CAP-used())};
+      bar.innerHTML=Object.entries(parts).filter(([,v])=>v>0).map(([k,v])=>
+        `<div title="${k}: ${v}" style="width:${v/CAP*100}%;background:${COLORS[k]}"></div>`).join("");
+    }
+    document.getElementById("dk-cb-turn").addEventListener("click",()=>add("history",600));
+    document.getElementById("dk-cb-doc").addEventListener("click",()=>add("docs",1500));
+    document.getElementById("dk-cb-reset").addEventListener("click",reset);
+    reset();
+  })();
+  </script>
+</section>
+
+<section class="slide" id="s-6">
+  <span class="kicker">2 · Context window</span>
+  <h2>Full doesn't mean one <span class="hl">outcome</span></h2>
+  <div class="ctxbar" id="dk-ov-bar"></div>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+    <button class="btn" data-s="truncate">Truncate</button>
+    <button class="btn" data-s="sliding">Sliding window</button>
+    <button class="btn" data-s="summarize">Summarize</button>
+    <button class="btn" data-s="rag">RAG offload</button>
+  </div>
+  <div id="dk-ov-msg" style="margin-top:10px;color:var(--muted);font-size:.85rem;max-width:64ch;"></div>
+  <script>
+  (function(){
+    const CAP=8000;
+    const COLORS={system:"#b06ad6",docs:"#4f9ee0",history:"#57b06a",summary:"#e08a3c",output:"#e08a3c",free:"#1a2027"};
+    const OUTCOMES={
+      truncate:{system:400,docs:4000,history:2600,output:1000,msg:"Oldest turns silently dropped."},
+      sliding:{system:400,docs:4000,history:2600,output:1000,msg:"Only the last N turns kept — bounded, by design."},
+      summarize:{system:400,docs:4000,summary:600,history:2000,output:1000,msg:"Old turns compressed — gist survives, wording doesn't."},
+      rag:{system:400,docs:800,history:4600,output:1000,msg:"Docs never fully loaded — only retrieved snippets enter."},
+    };
+    const bar=document.getElementById("dk-ov-bar"), msg=document.getElementById("dk-ov-msg");
+    function draw(kind){
+      const seg=OUTCOMES[kind];
+      const used=Object.entries(seg).filter(([k])=>k!=="msg").reduce((a,[,v])=>a+v,0);
+      const parts={...seg, free:Math.max(0,CAP-used)};
+      bar.innerHTML=Object.entries(parts).filter(([k,v])=>k!=="msg"&&v>0).map(([k,v])=>
+        `<div title="${k}: ${v}" style="width:${v/CAP*100}%;background:${COLORS[k]}"></div>`).join("");
+      msg.textContent=seg.msg;
+    }
+    document.querySelectorAll("[data-s]").forEach(b=>b.addEventListener("click",()=>draw(b.dataset.s)));
+    draw("truncate");
+  })();
+  </script>
+</section>
+
 <div id="hud"></div>
 <script>
 const slides = [...document.querySelectorAll(".slide")];
