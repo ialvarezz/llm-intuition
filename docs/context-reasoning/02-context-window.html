@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Context & the Context Window — llm::intuition</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="grid-bg"></div>
+<header class="site-header">
+  <a class="brand" href="../index.html"><b>▚</b> LLM<b>::</b>INTUITION</a>
+  <nav>
+    <a href="index.html">01 Index</a>
+    <a href="01-tokenization-deep.html">01</a>
+    <a href="02-context-window.html" class="on">02</a>
+    <a href="03-attention-curve.html">03</a>
+    <a href="04-prompt-roles.html">04</a>
+    <a href="05-reasoning.html">05</a>
+    <a href="deck.html">Deck</a>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <span class="crumb">Module 01 / Concept 02</span>
+    <h1>Context &amp; the Context <span class="hl">Window</span></h1>
+    <p class="sub">The window isn't just a size limit — what's in it, in what order, shapes every answer long before it's ever full.</p>
+    <div class="meta"><span>Read <b>10 min</b></span><span>Level <b>Intermediate</b></span><span>Prereq <b>Module 00</b></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd"><span><span class="dot">●</span> OVERFLOW STRATEGY / INTERACTIVE</span><span>TOY 8K WINDOW</span></div>
+    <div class="panel-body" id="fig">
+      <div id="cw-bar" style="display:flex;height:34px;border:1px solid var(--line);overflow:hidden;">
+        <div title="SYSTEM: 400" style="width:5%;background:#b06ad6"></div>
+        <div title="DOCUMENTS: 4000" style="width:50%;background:#4f9ee0"></div>
+        <div title="HISTORY (KEPT): 2600" style="width:32.5%;background:#57b06a"></div>
+        <div title="RESERVED OUTPUT: 1000" style="width:12.5%;background:#e08a3c"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+        <button class="btn" data-s="truncate">Truncate</button>
+        <button class="btn" data-s="sliding">Sliding window</button>
+        <button class="btn" data-s="summarize">Summarize</button>
+        <button class="btn" data-s="rag">RAG offload</button>
+      </div>
+    </div>
+    <div class="panel-ft" id="fig-ft">TRUNCATE — Oldest turns silently dropped — no record they existed.</div>
+  </div>
+  <div class="figure-note">Same overflowing 8k conversation, four different responses to it. Segment sizes are illustrative.</div>
+
+  <div class="prose">
+    <h2>// Everything counts, every turn</h2>
+    <p>Module 00 introduced the context window as a size limit. Anthropic's own definition is precise and worth restating: the context window "refers to all the text a language model can reference when generating a response, including the response itself," representing "a 'working memory' for the model," distinct from the training corpus <a href="#ref-s1">[S1]</a>. Windows top out "up to 1M tokens, depending on the model," and that ceiling holds "the conversation history plus the new output" the model generates <a href="#ref-s1">[S1]</a> — the output isn't extra room, it's carved from the same budget as the input.</p>
+    <p>What actually counts toward that budget is broader than the visible chat log: "Everything in the request counts toward the context window: the system prompt, every message in <code>messages</code> (including tool results, images, and documents), and your tool definitions. The output Claude generates for the turn, including its extended thinking, counts too" <a href="#ref-s1">[S1]</a>. Tool schemas are sent every turn whether or not a tool gets used. As a conversation advances, "each user message and assistant response accumulates within the context window, and previous turns are preserved completely" in the raw API <a href="#ref-s1">[S1]</a> — chat interfaces like claude.ai instead manage the window "on a rolling 'first in, first out' basis" <a href="#ref-s1">[S1]</a>, quietly dropping old turns as a UX choice the underlying model doesn't make on its own. And caching doesn't shrink the budget: "cached prompt prefixes still occupy the context window" <a href="#ref-s1">[S1]</a> — caching changes what you pay, not what counts.</p>
+
+    <h2>// Composition before capacity</h2>
+    <p><b>Order.</b> Liu et al.'s "Lost in the Middle" study found that language-model performance "is often highest when relevant information occurs at the beginning or end of the input context, and significantly degrades when models must access relevant information in the middle of long contexts, even for explicitly long-context models" <a href="#ref-s2">[S2]</a>. This is a positional-recall problem, not a capacity one — the tokens are all technically in the window, well under any cap. Early instructions buried under pages of later volume sit in the structurally worst position, which bridges directly into concept 03's attention curve.</p>
+    <p><b>Redundancy.</b> Repeated or contradictory context doesn't just waste budget — competing copies of the same fact become competing candidate "truths" the model has to arbitrate at generation time, with no principled signal for which is current.</p>
+    <p><b>Relevance mix.</b> Anthropic frames context as "a critical but finite resource for AI agents" <a href="#ref-s4">[S4]</a>, tracing the cost to the architecture itself: transformers let "every token attend to every other token across the entire context," producing "n² pairwise relationships for n tokens" <a href="#ref-s4">[S4]</a>. More tokens — even irrelevant, even with room to spare — means more competing relationships. Anthropic calls the resulting degradation "context rot": "as the number of tokens in the context window increases, the model's ability to accurately recall information from that context decreases," a pattern that "emerges across all models," though "some models exhibit more gentle degradation than others" <a href="#ref-s4">[S4]</a>.</p>
+
+    <h2>// Four ways to handle overflow</h2>
+    <p><b>1. Truncation / eviction.</b> Drop the oldest content to make room — the same FIFO behavior Anthropic describes for chat interfaces <a href="#ref-s1">[S1]</a>. Cheap, no extra computation, completely lossy: nothing in the remaining context records what was dropped.</p>
+    <p><b>2. Sliding window.</b> Structurally the same loss as truncation, but deliberate: keep only the last N turns by policy. LangChain frames the underlying problem plainly — "a full history may not fit inside an LLM's context window, resulting in an context loss or errors," and even generous windows don't fix it, since "most LLMs still perform poorly over long contexts" <a href="#ref-s6">[S6]</a>. Their trimming approach counts tokens and keeps "only the last few messages to fit context window" <a href="#ref-s6">[S6]</a> — bounded cost, total loss past the edge, and LangChain says so directly: "the problem with trimming or removing messages... is that you may lose information from culling of the message queue" <a href="#ref-s6">[S6]</a>.</p>
+    <p><b>3. Summarization / compaction.</b> Compress old turns into a running summary instead of dropping them. Anthropic calls this "compaction": "the practice of taking a conversation nearing the context window limit, summarizing its contents, and reinitiating a new context window with the summary" <a href="#ref-s4">[S4]</a>, often "the first lever in context engineering to drive better long-term coherence" <a href="#ref-s4">[S4]</a>. It can be selective — Anthropic's own agent "preserves architectural decisions, unresolved bugs, and implementation details while discarding redundant tool outputs or messages" <a href="#ref-s4">[S4]</a> — but "the art of compaction lies in the selection of what to keep versus what to discard, as overly aggressive compaction can result in the loss of subtle but critical context" <a href="#ref-s4">[S4]</a>. LangChain's vendor-neutral framing lands on the same trade-off: "some applications benefit from a more sophisticated approach of summarizing the message history using a chat model" <a href="#ref-s6">[S6]</a> precisely because trimming alone loses too much.</p>
+    <p><b>4. RAG / offload.</b> Never front-load the material at all. Agents built "just in time" instead "maintain lightweight identifiers (file paths, stored queries, web links, etc.) and use these references to dynamically load data into context at runtime using tools" <a href="#ref-s4">[S4]</a>. The window holds pointers, not payloads — sidestepping capacity and composition problems at the cost of retrieval latency and the risk of missing something relevant.</p>
+    <table style="width:100%;border-collapse:collapse;font-size:.92rem;margin-top:8px;">
+      <thead><tr style="border-bottom:1px solid var(--line);text-align:left;">
+        <th style="padding:8px 10px;">Strategy</th><th style="padding:8px 10px;">What survives</th><th style="padding:8px 10px;">What's lost</th><th style="padding:8px 10px;">When to use it</th>
+      </tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--line);"><td style="padding:8px 10px;">Truncation</td><td style="padding:8px 10px;">Most recent content</td><td style="padding:8px 10px;">Oldest content, silently</td><td style="padding:8px 10px;">Rarely deliberate — usually a framework default</td></tr>
+        <tr style="border-bottom:1px solid var(--line);"><td style="padding:8px 10px;">Sliding window</td><td style="padding:8px 10px;">Last N turns, predictably</td><td style="padding:8px 10px;">Everything before the window, by design</td><td style="padding:8px 10px;">Short-lived tasks (e.g. one support ticket)</td></tr>
+        <tr style="border-bottom:1px solid var(--line);"><td style="padding:8px 10px;">Summarize / compact</td><td style="padding:8px 10px;">Gist, key decisions, open issues</td><td style="padding:8px 10px;">Exact wording, missed detail</td><td style="padding:8px 10px;">Long-running, coherence-dependent tasks</td></tr>
+        <tr><td style="padding:8px 10px;">RAG / offload</td><td style="padding:8px 10px;">Nothing preloaded — only what's retrieved</td><td style="padding:8px 10px;">Whatever isn't retrieved when needed</td><td style="padding:8px 10px;">Large reference material, mostly irrelevant per turn</td></tr>
+      </tbody>
+    </table>
+
+    <h2>// Pro vs. amateur</h2>
+    <p>Amateurs treat the context window as a bucket to fill — if it fits, it can only help. Pros treat it as a budget to curate: "more context isn't automatically better," because "as token count grows, accuracy and recall degrade," so "curating what's in context [is] just as important as how much space is available" <a href="#ref-s1">[S1]</a>. Amateurs let the framework's default decide what happens on overflow; pros pick a strategy deliberately, matched to the task — a sliding window for a short chat, compaction for a long agentic session, RAG offload for a task sitting on a large mostly-irrelevant corpus. Amateurs assume content that fits under the cap is free; pros know redundant context isn't free even with room to spare — it competes for the same n² attention budget as everything else <a href="#ref-s4">[S4]</a>, and three copies of a fact aren't reinforcement, they're three candidate truths to arbitrate. Context stuffing is the expensive alternative to retrieval, not the cheap one — it's priced per token whether or not it's used <a href="#ref-s4">[S4]</a>.</p>
+  </div>
+
+  <div class="refs">
+    <a class="ref" id="ref-s1" href="https://docs.anthropic.com/en/docs/build-with-claude/context-windows"><span class="src">Docs · Anthropic</span><span class="t">Context windows</span></a>
+    <a class="ref" id="ref-s2" href="https://arxiv.org/abs/2307.03172"><span class="src">Paper · Liu et al. 2023</span><span class="t">Lost in the Middle: How Language Models Use Long Contexts</span></a>
+    <a class="ref" id="ref-s3" href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching"><span class="src">Docs · Anthropic</span><span class="t">Prompt caching</span></a>
+    <a class="ref" id="ref-s4" href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"><span class="src">Engineering blog · Anthropic</span><span class="t">Effective context engineering for AI agents</span></a>
+    <a class="ref" id="ref-s5" href="https://huggingface.co/docs/transformers/kv_cache"><span class="src">Docs · Hugging Face</span><span class="t">Cache strategies (KV cache)</span></a>
+    <a class="ref" id="ref-s6" href="https://docs.langchain.com/oss/python/langchain/short-term-memory"><span class="src">Docs · LangChain</span><span class="t">Short-term memory</span></a>
+  </div>
+
+  <nav class="pager">
+    <a class="prev" href="01-tokenization-deep.html">← 01 · Tokenization, Deeper</a>
+    <a class="next" href="03-attention-curve.html">03 · Attention Curve →</a>
+  </nav>
+</main>
+<script>
+const COLORS = {system:"#b06ad6",docs:"#4f9ee0",history:"#57b06a",summary:"#e08a3c",output:"#e08a3c",free:"#1a2027"};
+const LABELS = {system:"SYSTEM",docs:"DOCUMENTS",history:"HISTORY (KEPT)",summary:"SUMMARY",output:"RESERVED OUTPUT",free:"FREE"};
+const CAP = 8000;
+// Same starting overflow state for every strategy: system 400, docs 4000, history 4600, output 1000 (over cap by 2000)
+const OUTCOMES = {
+  truncate:   {system:400, docs:4000, history:2600, output:1000, msg:"Oldest turns silently dropped — no record they existed."},
+  sliding:    {system:400, docs:4000, history:2600, output:1000, msg:"Only the last N turns kept by design — same shape as truncate, but intentional and bounded."},
+  summarize:  {system:400, docs:4000, summary:600, history:2000, output:1000, msg:"Old turns compressed to a summary — gist survives, exact wording doesn't."},
+  rag:        {system:400, docs:800, history:4600, output:1000, msg:"Docs never fully loaded — only retrieved snippets enter the window."},
+};
+const bar = document.getElementById("cw-bar"), ft = document.getElementById("fig-ft");
+function draw(kind){
+  const seg = OUTCOMES[kind];
+  const used = Object.entries(seg).filter(([k])=>k!=="msg").reduce((a,[,v])=>a+v,0);
+  const parts = {...seg, free: Math.max(0, CAP-used)};
+  bar.innerHTML = Object.entries(parts).filter(([k,v]) => k!=="msg" && v>0).map(([k,v]) =>
+    `<div title="${LABELS[k]}: ${v}" style="width:${v/CAP*100}%;background:${COLORS[k]}"></div>`).join("");
+  ft.innerHTML = `<b>${kind.toUpperCase()}</b> — ${seg.msg}`;
+}
+document.querySelectorAll("[data-s]").forEach(b =>
+  b.addEventListener("click", () => draw(b.dataset.s)));
+draw("truncate");
+</script>
+</body>
+</html>
