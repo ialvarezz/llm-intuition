@@ -130,6 +130,23 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
+<section class="slide" id="s-4">
+  <span class="kicker">1 · Tokenization</span>
+  <h2>Two famous <span class="hl">failures</span>, one cause</h2>
+  <div class="pick">
+    <details><summary>"How many r's in strawberry?"</summary>
+      <div class="ans">The model never sees ten letters. It sees roughly
+        <span class="tk c1">str</span><span class="tk c2">aw</span><span class="tk c3">berry</span> — three opaque IDs.
+        Nothing in an ID encodes "contains two r's," so counting is a <b>memory recall about spelling</b>, not perception.
+        Ask it to write <code>s-t-r-a-w-b-e-r-r-y</code> first and each letter becomes its own visible token — suddenly it can count.</div></details>
+    <details><summary>Why is arithmetic shaky?</summary>
+      <div class="ans">Token boundaries ignore place value: <span class="tk c1">123</span><span class="tk c2">4</span> + <span class="tk c3">567</span> —
+        the 4 and the 7 are both "ones" digits but sit in unrelated chunks, so <b>columns can't align</b>.
+        Writing the digits out one at a time rebuilds the alignment in context — which is exactly what step-by-step reasoning does.</div></details>
+  </div>
+  <div class="cap">Same root cause: <b>the token is the smallest unit the model can perceive</b>. Everything inside one is invisible unless it was separately memorized. Both fixes work by re-spelling the problem into smaller tokens — remember this slide when we get to reasoning.</div>
+</section>
+
 <section class="slide" id="s-5">
   <span class="kicker">1 · Tokenization</span>
   <h2>Roles are <span class="hl">tokens</span>, not metadata</h2>
