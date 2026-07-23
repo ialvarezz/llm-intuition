@@ -296,7 +296,8 @@ body.deck-mode .slide.on{display:flex;}
     <button class="btn" data-p="3">Late</button>
     <button class="btn" data-p="4">End</button>
   </div>
-  <div id="dk-rc-msg" style="margin-top:10px;color:var(--muted);font-size:.85rem;"></div>
+  <div id="dk-rc-msg" class="cap"></div>
+  <div class="cap">Why the U-shape: attention weights are <b>normalized across every token in the window</b> — more tokens competing means less weight available per token, so signal spreads thin. Training adds the bias: sequence starts dominate training data (primacy) and the causal mask keeps recent tokens close (recency). The middle gets neither. Measured by Liu et al. 2023 across models built specifically for long context — the <b>effective</b> window is smaller than the advertised one.</div>
   <script>
   (function(){
     const POINTS=[[40,95,"START"],[150,72,"EARLY"],[260,48,"MIDDLE"],[370,74,"LATE"],[480,96,"END"]];
@@ -321,6 +322,7 @@ body.deck-mode .slide.on{display:flex;}
   <div id="dk-att-toks" style="display:flex;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:.85rem;"></div>
   <div id="dk-att-bars" style="margin-top:14px;display:flex;flex-direction:column;gap:5px;"></div>
   <button class="btn" id="dk-att-btn" style="margin-top:14px;">Next token ▸</button>
+  <div class="cap">Each bar is the highlighted token's <b>attention share</b> paid to one earlier token — the percentages sum to 100% across the row, because attention is a fixed budget being divided, not a set of independent scores. A token that gets a thin slice is <b>functionally invisible</b> on this step even though it sits in the window. Watch "it": most of its budget goes to "ball" — that's coreference happening — but stretch the sentence to thousands of tokens and that slice thins toward nothing. This per-token budget-splitting is the mechanism behind the U-curve on the previous slide.</div>
   <script>
   (function(){
     const TOKS=["The","robot","picked","up","the","ball","because","it","was","light"];
