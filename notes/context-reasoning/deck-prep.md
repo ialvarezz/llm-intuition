@@ -269,5 +269,5 @@ Prices are deliberately absent — they date in weeks, the mechanisms don't. If 
 - Toy tokenizer on slide 3 isn't real — say "illustrative" out loud; the vendor rows are the real comparison.
 - Don't read captions verbatim — written for readers after the talk, not recitation.
 - No JS degrades every interactive slide to stacked static — present with JS on.
-- Strawberry appears twice by design (slides 4, 15) — call back, don't re-explain.
+- Strawberry appears three times by design (slides 4, 14, 15) — call back, don't re-explain.
 - Vendor-name talk confined to slides 3 and 12 — the rest is vendor-neutral.

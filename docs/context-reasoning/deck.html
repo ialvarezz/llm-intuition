@@ -447,7 +447,7 @@ body.deck-mode .slide.on{display:flex;}
     const slider=document.getElementById("dk-rb-slider"), out=document.getElementById("dk-rb-out");
     function render(){
       const l=LEVELS[+slider.value];
-      out.innerHTML=`<b>${l.name} reasoning budget</b> — ~${l.tok} tokens<br>${l.q}`;
+      out.innerHTML=`<b>${l.name}</b> — ~${l.tok} tokens<br>${l.q}`;
     }
     slider.addEventListener("input",render);
     render();
