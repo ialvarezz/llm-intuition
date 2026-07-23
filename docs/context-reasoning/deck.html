@@ -81,6 +81,25 @@ body.deck-mode .slide.on{display:flex;}
   <h2>The model never sees <span class="hl">words</span></h2>
   <textarea id="dk-tok-in" rows="2" style="width:100%;max-width:64ch;">Tokenization is the substrate everything else is built on.</textarea>
   <div id="dk-tok-out" style="font-size:1.05rem;line-height:2.2;margin-top:14px;"></div>
+  <div style="margin-top:22px;font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;color:var(--faint);">SAME SENTENCE, THREE VOCABULARIES · ILLUSTRATIVE</div>
+  <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px;max-width:64ch;">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+      <span style="font-family:var(--mono);font-size:.72rem;color:var(--faint);width:110px;">CLAUDE (OPUS)</span>
+      <span style="font-size:.95rem;"><span class="tk c1">Token</span><span class="tk c2">ization</span><span class="tk c3">&nbsp;differs</span><span class="tk c4">&nbsp;across</span><span class="tk c5">&nbsp;model</span><span class="tk c1">&nbsp;families</span><span class="tk c2">.</span></span>
+      <span style="font-family:var(--mono);font-size:.72rem;color:var(--faint);">7 TOKENS</span>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+      <span style="font-family:var(--mono);font-size:.72rem;color:var(--faint);width:110px;">GPT</span>
+      <span style="font-size:.95rem;"><span class="tk c1">Token</span><span class="tk c2">ization</span><span class="tk c3">&nbsp;differs</span><span class="tk c4">&nbsp;across</span><span class="tk c5">&nbsp;model</span><span class="tk c1">&nbsp;fam</span><span class="tk c2">ilies</span><span class="tk c3">.</span></span>
+      <span style="font-family:var(--mono);font-size:.72rem;color:var(--faint);">8 TOKENS</span>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+      <span style="font-family:var(--mono);font-size:.72rem;color:var(--faint);width:110px;">GEMMA</span>
+      <span style="font-size:.95rem;"><span class="tk c1">▁Tokenization</span><span class="tk c2">▁differs</span><span class="tk c3">▁across</span><span class="tk c4">▁model</span><span class="tk c5">▁familie</span><span class="tk c1">s</span><span class="tk c2">.</span></span>
+      <span style="font-family:var(--mono);font-size:.72rem;color:var(--faint);">7 TOKENS</span>
+    </div>
+  </div>
+  <div class="cap">Each vendor ships its own learned vocabulary, so the <b>same text costs a different number of tokens per model family</b> — Gemma's SentencePiece marks word boundaries with ▁, GPT and Claude use different BPE merge tables. Splits shown are illustrative; the lesson (counts differ, budget against the model you actually use) is real.</div>
   <script>
   (function(){
     const COMMON = ["the","ing","tion","er","re","sub","form","and","is","not","word","piece","token","stra","te"];
