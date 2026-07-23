@@ -415,6 +415,7 @@ body.deck-mode .slide.on{display:flex;}
     <button class="btn" id="dk-rt-steps">Step-by-step</button>
   </div>
   <div id="dk-rt-out" style="margin-top:14px;padding:12px;border:1px solid var(--line);font-size:.88rem;line-height:1.6;min-height:5em;max-width:64ch;"></div>
+  <div class="cap">Where does the trace come from? A transformer spends a <b>fixed amount of compute per generated token</b> — one forward pass, same depth, whether the question is trivial or hard. Generating intermediate tokens is therefore the <b>only way the model can spend more compute on a harder problem</b>: each step is another pass, and every step it writes becomes readable input for the next. The trace is ordinary generated text used as <b>external scratch memory</b> — the same trick as spelling out s-t-r-a-w-b-e-r-r-y, rebuilding structure the tokenizer destroyed. That's also exactly why it costs more tokens.</div>
   <script>
   (function(){
     const DIRECT="The second train catches up after 1.5 hours from when it departs. (~14 tokens)";
@@ -431,16 +432,17 @@ body.deck-mode .slide.on{display:flex;}
 
 <section class="slide" id="s-15">
   <span class="kicker">5 · Reasoning</span>
-  <h2>A budget, not a free <span class="hl">upgrade</span></h2>
+  <h2>Effort is a <span class="hl">dial</span>, not a cap</h2>
   <input type="range" id="dk-rb-slider" min="0" max="3" step="1" value="1">
   <div id="dk-rb-out" style="margin-top:12px;max-width:64ch;font-size:.9rem;line-height:1.6;"></div>
+  <div class="cap">Hard token caps are the old model — current APIs use <b>adaptive thinking</b>: the model decides when and how much to think, and effort shifts that threshold. The catch: <b>the decision to think is itself a next-token prediction</b>, keyed on surface features that correlated with difficulty in training. "How many r's in strawberry" is seven words and looks trivial — nothing on its surface signals that it fights the tokenizer — so it gets a fast, confident, wrong answer. Don't let the model's self-assessment be the router on paths that matter.</div>
   <script>
   (function(){
     const LEVELS=[
-      {name:"None", tok:14, q:"Correct on simple tasks, brittle on multi-step ones."},
-      {name:"Low", tok:74, q:"Solves the multi-step problem, minimal exploration."},
-      {name:"Medium", tok:180, q:"Checks its own arithmetic once — catches some errors."},
-      {name:"High", tok:420, q:"Re-derives from three angles — diminishing returns, same answer."},
+      {name:"Low effort", tok:14, q:"May skip thinking entirely on simpler problems; scopes work to exactly what was asked."},
+      {name:"Medium effort", tok:74, q:"Thinks when the problem seems to warrant it, briefly."},
+      {name:"High effort", tok:180, q:"Almost always thinks deeply — the typical default."},
+      {name:"Max effort", tok:420, q:"No constraint on token spend — worth it only where evals show headroom."},
     ];
     const slider=document.getElementById("dk-rb-slider"), out=document.getElementById("dk-rb-out");
     function render(){
