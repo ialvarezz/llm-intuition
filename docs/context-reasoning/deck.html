@@ -355,14 +355,20 @@ body.deck-mode .slide.on{display:flex;}
     <button class="btn" id="dk-pa-reset">Reset</button>
   </div>
   <pre class="raw" id="dk-pa-out" style="margin-top:14px;background:var(--panel);border:1px solid var(--line);padding:14px;max-width:70ch;"></pre>
+  <div class="cap" id="dk-pa-cap"></div>
   <script>
   (function(){
     const COLOR={system:"#b06ad6",user:"#00c7fd"};
     let seq=[];
-    const out=document.getElementById("dk-pa-out");
+    const out=document.getElementById("dk-pa-out"), cap=document.getElementById("dk-pa-cap");
     function render(){
       out.innerHTML = seq.length===0 ? "Add snippets to build the raw sequence."
         : seq.map(s=>`<span style="color:${COLOR[s.lane]}">[${s.lane}]</span> ${s.text}`).join("\n");
+      const hasSys=seq.some(s=>s.lane==="system");
+      const hasConflict=hasSys && seq.some(s=>s.lane==="user"&&s.text.startsWith("Write this as one flowing paragraph"));
+      cap.innerHTML = seq.length===0 ? "This is the flat token sequence the model actually reads — roles are just delimiter tokens inside it."
+        : hasConflict ? "<b>System and user now conflict.</b> Expected behavior: the model follows the system instruction (bullets, not a paragraph) — post-training deliberately attached <b>more authority to the system role</b>, and position compounds it: system sits at the front, one of the two seats attention favors. But it's a <b>trained tendency, not an architectural guarantee</b> — pressure it hard enough and it can break, which is why system role is not a security boundary."
+        : "No conflict yet — each instruction has its own lane. Add the conflicting user ask to see how the hierarchy resolves it.";
     }
     document.querySelectorAll("[data-lane]").forEach(b=>
       b.addEventListener("click",()=>{seq.push({lane:b.dataset.lane,text:b.dataset.text}); render();}));
@@ -370,6 +376,20 @@ body.deck-mode .slide.on{display:flex;}
     render();
   })();
   </script>
+</section>
+
+<section class="slide" id="s-12">
+  <span class="kicker">4 · Roles</span>
+  <h2>Who actually <span class="hl">writes</span> into each role?</h2>
+  <div class="pick">
+    <details><summary>System — the operator's channel</summary>
+      <div class="ans">Written by the <b>application or harness developer</b>, not the person chatting. Populated two ways: static configuration, or content the harness loads on demand — a <b>Skill</b> that injects the team's instructions when relevant is literally writing into the system role. (How Skills work: <a href="../plugins/index.html">Module A1</a>.)</div></details>
+    <details><summary>User — the human's channel, and the danger zone</summary>
+      <div class="ans">The person's actual ask, every turn — but <b>tool results, retrieved pages, and file contents usually land here too</b>. That puts untrusted text in the seat the model treats as a person speaking, which is the entire mechanism of prompt injection. Delimit it and label it as data.</div></details>
+    <details><summary>Assistant — the model imitates itself</summary>
+      <div class="ans">The model's own prior turns. It doesn't just remember them — it <b>conditions on them as examples</b>: consistency and persona drift are the model pattern-matching its earlier style. That's also why <b>prefill</b> works: put a partial answer in the assistant role and the model continues it — an opening <code>{</code> effectively forces JSON. (Some current APIs now reject prefill on their newest models — but the imitation mechanism is why it ever worked.)</div></details>
+  </div>
+  <div class="cap">Roles are a <b>privilege system</b>: operator constraints → system, task content → user, and anything from outside the trust boundary gets marked as data no matter which envelope carried it in.</div>
 </section>
 
 <section class="slide" id="s-13">
