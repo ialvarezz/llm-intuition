@@ -357,6 +357,57 @@ body.deck-mode .slide.on{display:flex;}
   </div>
 </section>
 
+<section class="slide" id="s-14">
+  <span class="kicker">Putting it together</span>
+  <h2>One conversation, all five <span class="hl">mechanisms</span></h2>
+  <div class="steps">
+    <div class="step"><b>1 · Tokenize:</b> the prompt and every prior turn become tokens the moment they're sent — nothing is "words" past this point.</div>
+    <div class="step"><b>2 · Window fills:</b> system prompt, history, a pasted doc, and reserved output all draw from the same budget.</div>
+    <div class="step"><b>3 · Attention curve bites:</b> a fact buried mid-document gets less effective weight than one at the start or end — even though it's technically in-window.</div>
+    <div class="step"><b>4 · Roles structure the ask:</b> the system prompt sets the stable behavior, the user turn carries the actual question, and the harness assembles both into one sequence.</div>
+    <div class="step"><b>5 · Reasoning produces the answer:</b> the model spends extra tokens working through the multi-step part before committing to a final response.</div>
+  </div>
+</section>
+
+<section class="slide" id="s-15">
+  <span class="kicker">BKMs</span>
+  <h2>What to actually <span class="hl">do</span></h2>
+  <div class="tree">
+    <details><summary>Tokenization</summary>
+      <div class="note">Budget in tokens, not words. Expect code and non-English text to cost more per character.</div></details>
+    <details><summary>Context window</summary>
+      <div class="note">Curate what's in the window — pick an overflow strategy on purpose, don't just let the default truncate.</div></details>
+    <details><summary>Attention curve</summary>
+      <div class="note">Don't bury the critical instruction in the middle of a long prompt. Restate it near the end.</div></details>
+    <details><summary>Roles</summary>
+      <div class="note">Stable behavior → system. The actual ask → user. Never let untrusted content read as either.</div></details>
+    <details><summary>Reasoning</summary>
+      <div class="note">More reasoning tokens is a cost/quality knob — verify conclusions, don't trust a confident trace.</div></details>
+  </div>
+</section>
+
+<section class="slide" id="s-16">
+  <span class="kicker">Recap</span>
+  <h2>Five mechanisms, one line each</h2>
+  <table>
+    <tr><th>Concept</th><th>Mechanism</th><th>One BKM</th></tr>
+    <tr><td>Tokenization</td><td>Learned subword vocabulary (BPE)</td><td>Budget in tokens, not words</td></tr>
+    <tr><td>Context window</td><td>Everything counts, every turn</td><td>Pick an overflow strategy on purpose</td></tr>
+    <tr><td>Attention curve</td><td>Uneven recall by position</td><td>Restate critical constraints near the end</td></tr>
+    <tr><td>Roles</td><td>Trained priority, not hard logic</td><td>Never let untrusted content read as system/assistant</td></tr>
+    <tr><td>Reasoning</td><td>More tokens before the answer</td><td>Verify conclusions, don't trust the trace</td></tr>
+  </table>
+</section>
+
+<section class="slide" id="s-17">
+  <span class="kicker">Q&amp;A</span>
+  <h2>Questions — open floor</h2>
+  <ul>
+    <li>Deeper reading: the five concept pages at <a href="index.html">context-reasoning/index.html</a></li>
+    <li>tokens → context window → attention curve → roles → reasoning</li>
+  </ul>
+</section>
+
 <div id="hud"></div>
 <script>
 const slides = [...document.querySelectorAll(".slide")];
