@@ -140,7 +140,7 @@ body.deck-mode .slide.on{display:flex;}
     const CAP=8000, OUT=1000;
     const COLORS={system:"#b06ad6",docs:"#4f9ee0",history:"#57b06a",output:"#e08a3c",free:"#1a2027"};
     let seg;
-    const bar=document.getElementById("dk-cb-bar"), ft=document.getElementById("fig-ft")||null;
+    const bar=document.getElementById("dk-cb-bar");
     function used(){ return seg.system+seg.docs+seg.history+seg.output; }
     function reset(){ seg={system:400,docs:0,history:0,output:OUT}; draw(); }
     function add(kind,n){
