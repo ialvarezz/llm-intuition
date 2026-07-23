@@ -46,6 +46,11 @@ body.deck-mode .slide.on{display:flex;}
 .slide pre.raw{white-space:pre-wrap;font-size:.8rem;}
 .slide svg{max-width:100%;}
 .slide input[type=range]{max-width:320px;}
+.leg{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-family:var(--mono);
+  font-size:.66rem;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;}
+.leg i{display:inline-block;width:9px;height:9px;margin-right:6px;vertical-align:baseline;}
+.cap{margin-top:12px;color:var(--muted);font-size:.85rem;max-width:64ch;line-height:1.65;}
+.cap b{color:var(--fg);}
 </style>
 </head>
 <body>
@@ -106,7 +111,7 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
-<section class="slide" id="s-4">
+<section class="slide" id="s-5">
   <span class="kicker">1 · Tokenization</span>
   <h2>Roles are <span class="hl">tokens</span>, not metadata</h2>
   <div class="toggle2">
@@ -126,7 +131,7 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
-<section class="slide" id="s-5">
+<section class="slide" id="s-6">
   <span class="kicker">2 · Context window</span>
   <h2>Everything counts, every <span class="hl">turn</span></h2>
   <div class="ctxbar" id="dk-cb-bar"></div>
@@ -162,7 +167,7 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
-<section class="slide" id="s-6">
+<section class="slide" id="s-7">
   <span class="kicker">2 · Context window</span>
   <h2>Full doesn't mean one <span class="hl">outcome</span></h2>
   <div class="ctxbar" id="dk-ov-bar"></div>
@@ -198,7 +203,7 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
-<section class="slide" id="s-7">
+<section class="slide" id="s-9">
   <span class="kicker">3 · Attention curve</span>
   <h2>In the window isn't the same as <span class="hl">seen</span></h2>
   <svg id="dk-rc-svg" viewBox="0 0 520 200" style="max-width:520px;"></svg>
@@ -228,7 +233,7 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
-<section class="slide" id="s-8">
+<section class="slide" id="s-10">
   <span class="kicker">3 · Attention curve</span>
   <h2>Why position <span class="hl">mechanically</span> matters</h2>
   <div id="dk-att-toks" style="display:flex;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:.85rem;"></div>
@@ -256,7 +261,7 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
-<section class="slide" id="s-9">
+<section class="slide" id="s-11">
   <span class="kicker">4 · Roles</span>
   <h2>Build the raw <span class="hl">sequence</span></h2>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -283,7 +288,7 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
-<section class="slide" id="s-10">
+<section class="slide" id="s-13">
   <span class="kicker">4 · Roles</span>
   <h2>Pick the role by the <span class="hl">job</span></h2>
   <div class="pick">
@@ -298,7 +303,7 @@ body.deck-mode .slide.on{display:flex;}
   </div>
 </section>
 
-<section class="slide" id="s-11">
+<section class="slide" id="s-14">
   <span class="kicker">5 · Reasoning</span>
   <h2>More tokens, not a different <span class="hl">process</span></h2>
   <div class="toggle2">
@@ -320,7 +325,7 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
-<section class="slide" id="s-12">
+<section class="slide" id="s-15">
   <span class="kicker">5 · Reasoning</span>
   <h2>A budget, not a free <span class="hl">upgrade</span></h2>
   <input type="range" id="dk-rb-slider" min="0" max="3" step="1" value="1">
@@ -344,7 +349,7 @@ body.deck-mode .slide.on{display:flex;}
   </script>
 </section>
 
-<section class="slide" id="s-13">
+<section class="slide" id="s-16">
   <span class="kicker">5 · Reasoning</span>
   <h2>A trace isn't <span class="hl">proof</span></h2>
   <div class="pick">
@@ -357,7 +362,7 @@ body.deck-mode .slide.on{display:flex;}
   </div>
 </section>
 
-<section class="slide" id="s-14">
+<section class="slide" id="s-17">
   <span class="kicker">Putting it together</span>
   <h2>One conversation, all five <span class="hl">mechanisms</span></h2>
   <div class="steps">
@@ -369,7 +374,7 @@ body.deck-mode .slide.on{display:flex;}
   </div>
 </section>
 
-<section class="slide" id="s-15">
+<section class="slide" id="s-18">
   <span class="kicker">BKMs</span>
   <h2>What to actually <span class="hl">do</span></h2>
   <div class="tree">
@@ -386,7 +391,7 @@ body.deck-mode .slide.on{display:flex;}
   </div>
 </section>
 
-<section class="slide" id="s-16">
+<section class="slide" id="s-19">
   <span class="kicker">Recap</span>
   <h2>Five mechanisms, one line each</h2>
   <table>
@@ -399,7 +404,7 @@ body.deck-mode .slide.on{display:flex;}
   </table>
 </section>
 
-<section class="slide" id="s-17">
+<section class="slide" id="s-20">
   <span class="kicker">Q&amp;A</span>
   <h2>Questions — open floor</h2>
   <ul>
@@ -432,6 +437,7 @@ function back(){
   show(cur-1);
 }
 addEventListener("keydown", e => {
+  if (e.target.matches("input, textarea")) return;
   if (e.key==="ArrowRight"||e.key===" "||e.key==="PageDown"){ e.preventDefault(); fwd(); }
   if (e.key==="ArrowLeft"||e.key==="PageUp") back();
 });
