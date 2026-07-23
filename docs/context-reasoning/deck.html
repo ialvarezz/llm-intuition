@@ -298,6 +298,65 @@ body.deck-mode .slide.on{display:flex;}
   </div>
 </section>
 
+<section class="slide" id="s-11">
+  <span class="kicker">5 · Reasoning</span>
+  <h2>More tokens, not a different <span class="hl">process</span></h2>
+  <div class="toggle2">
+    <button class="btn" id="dk-rt-direct">Direct answer</button>
+    <button class="btn" id="dk-rt-steps">Step-by-step</button>
+  </div>
+  <div id="dk-rt-out" style="margin-top:14px;padding:12px;border:1px solid var(--line);font-size:.88rem;line-height:1.6;min-height:5em;max-width:64ch;"></div>
+  <script>
+  (function(){
+    const DIRECT="The second train catches up after 1.5 hours from when it departs. (~14 tokens)";
+    const STEPS=["Head start: 60 × 0.5 = 30 miles.","Set 90t = 30 + 60t → t = 1.",
+      "Catches up 1h after departing (1.5h after the first train left). (~74 tokens)"];
+    const out=document.getElementById("dk-rt-out");
+    document.getElementById("dk-rt-direct").addEventListener("click",()=>out.textContent=DIRECT);
+    document.getElementById("dk-rt-steps").addEventListener("click",()=>
+      out.innerHTML=STEPS.map((s,i)=>`<div>${i+1}. ${s}</div>`).join(""));
+    out.textContent=DIRECT;
+  })();
+  </script>
+</section>
+
+<section class="slide" id="s-12">
+  <span class="kicker">5 · Reasoning</span>
+  <h2>A budget, not a free <span class="hl">upgrade</span></h2>
+  <input type="range" id="dk-rb-slider" min="0" max="3" step="1" value="1">
+  <div id="dk-rb-out" style="margin-top:12px;max-width:64ch;font-size:.9rem;line-height:1.6;"></div>
+  <script>
+  (function(){
+    const LEVELS=[
+      {name:"None", tok:14, q:"Correct on simple tasks, brittle on multi-step ones."},
+      {name:"Low", tok:74, q:"Solves the multi-step problem, minimal exploration."},
+      {name:"Medium", tok:180, q:"Checks its own arithmetic once — catches some errors."},
+      {name:"High", tok:420, q:"Re-derives from three angles — diminishing returns, same answer."},
+    ];
+    const slider=document.getElementById("dk-rb-slider"), out=document.getElementById("dk-rb-out");
+    function render(){
+      const l=LEVELS[+slider.value];
+      out.innerHTML=`<b>${l.name} reasoning budget</b> — ~${l.tok} tokens<br>${l.q}`;
+    }
+    slider.addEventListener("input",render);
+    render();
+  })();
+  </script>
+</section>
+
+<section class="slide" id="s-13">
+  <span class="kicker">5 · Reasoning</span>
+  <h2>A trace isn't <span class="hl">proof</span></h2>
+  <div class="pick">
+    <details><summary>Confident wrong reasoning</summary>
+      <div class="ans">Fluent, structured, step-numbered — and the arithmetic in step 2 is wrong. Structure reads as credibility; it isn't.</div></details>
+    <details><summary>Trace doesn't match the final answer</summary>
+      <div class="ans">The steps derive one value, the stated final answer is a different one — the trace and the output can diverge.</div></details>
+    <details><summary>Reasoning as elaborate hallucination</summary>
+      <div class="ans">More steps can mean more confident fabrication when the model lacks the underlying fact, not less.</div></details>
+  </div>
+</section>
+
 <div id="hud"></div>
 <script>
 const slides = [...document.querySelectorAll(".slide")];
